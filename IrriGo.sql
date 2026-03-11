@@ -1,24 +1,15 @@
--- 1. LIMPIEZA PROFUNDA: Borrar la base de datos si existe para evitar conflictos de versiones anteriores
-USE master;
-GO
-
-IF EXISTS (SELECT name FROM sys.databases WHERE name = N'IrriGo')
+-- 1. Crear la base de datos IrriGo si no existe
+IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'IrriGo')
 BEGIN
-    -- Forzar el cierre de conexiones activas para poder borrarla
-    ALTER DATABASE IrriGo SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-    DROP DATABASE IrriGo;
+    CREATE DATABASE IrriGo;
 END
 GO
 
--- 2. Crear la base de datos desde cero
-CREATE DATABASE IrriGo;
-GO
-
--- Usar la base de datos limpia
+-- Usar la base de datos
 USE IrriGo;
 GO
 
--- 3. CREACIÓN DE TABLAS BASADAS EN EL DIAGRAMA ER ACTUALIZADO
+-- 2. CREACIÓN DE TABLAS
 
 -- Tabla Usuario
 CREATE TABLE Usuario (
