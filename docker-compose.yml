@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  basededatos:
+    image: mysql:8.0
+    container_name: irrigo_mysql
+    environment:
+      # Esto hace que no pida contraseña, justo como lo tienes en tu main.py
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+      MYSQL_DATABASE: IrriGo
+    ports:
+      - "3306:3306"
+    volumes:
+      # Este es el truco maestro: Docker leerá tu setup.sql y creará las tablas 
+      # y los datos automáticamente en cuanto encienda el contenedor.
+      - ./setup.sql:/docker-entrypoint-initdb.d/setup.sql
