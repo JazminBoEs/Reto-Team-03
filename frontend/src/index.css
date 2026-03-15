@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@theme {
+  --color-earth-dark: #1A1C19;    /* Fondo oscuro */
+  --color-earth-panel: #242922;   /* Tarjetas */
+  --color-creamy-blue: #A7C7E7;   /* <--- TU NUEVO AZUL CREMOSO */
+  --color-river-blue: #7dd3fc;    /* Azul secundario */
+  --color-soil-brown: #A07855;    /* Tono tierra para alertas */
+}
+
+body {
+  @apply bg-earth-dark text-[#E2E8F0];
+  margin: 0;
+}
