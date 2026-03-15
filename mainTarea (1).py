@@ -4,8 +4,10 @@ import datetime
 from flask import Flask, request, jsonify
 import mysql.connector
 from flask.json.provider import DefaultJSONProvider
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 BASE_URL = '/api/v1'
 
 # ==========================================
