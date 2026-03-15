@@ -14,6 +14,9 @@ The React Compiler is not enabled on this template because of its impact on dev 
 ## Expanding the ESLint configuration
 
 If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+
+
 # 🌱 IrriGo - Sistema de Monitoreo Agrícola
 
 Bienvenido al repositorio oficial de **IrriGo**. Este proyecto integra nuestros servicios web y la interfaz gráfica para la gestión inteligente de parcelas, humedad y consumo de agua.
@@ -37,7 +40,7 @@ Asegúrate de tener instalado [Node.js](https://nodejs.org/es/) en tu equipo. Es
 Abre tu terminal en la carpeta raíz del proyecto y navega hacia la carpeta del frontend para instalar las librerías necesarias (esto solo se hace la primera vez):
 
 ```bash
-1. Entra a la carpeta del frontend
+#1. Entra a la carpeta del frontend
 cd frontend
 
 # 2. Instala las dependencias (React, Heroicons, Tailwind, etc.)
