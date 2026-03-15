@@ -1,56 +1,104 @@
-# React + Vite
+# 🚜 IrriGo - Sistema de Monitoreo Agrícola
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-
-
-
-# 🌱 IrriGo - Sistema de Monitoreo Agrícola
-
-Bienvenido al repositorio oficial de **IrriGo**. Este proyecto integra nuestros servicios web y la interfaz gráfica para la gestión inteligente de parcelas, humedad y consumo de agua.
-
-## 📂 Estructura del Proyecto
-
-El repositorio funciona bajo una arquitectura de Monorepo:
-* `/` (Raíz): Contiene el backend, archivos `.yaml` de configuración y `main.py`.
-* `/frontend`: Contiene la interfaz de usuario desarrollada con **React, Vite y Tailwind CSS**.
+Este repositorio contiene el MVP (Producto Mínimo Viable) de IrriGo, una plataforma integral para la gestión de riego inteligente. El sistema utiliza una arquitectura profesional desacoplada para garantizar escalabilidad y facilidad de despliegue.
 
 ---
 
-## 🚀 Cómo ejecutar la Interfaz Gráfica (Frontend)
+## 🏗️ Arquitectura del Sistema
 
-Para ver el Panel Principal y las Áreas de Riego en tu computadora, sigue estos pasos:
+* **Frontend:** Interfaz reactiva desarrollada en React + Vite con estilos de Tailwind CSS.
+* **Backend:** API REST robusta construida con Python y Flask.
+* **Base de Datos:** Motor MySQL 8.0 virtualizado mediante contenedores de Docker.
 
-### 1. Requisitos Previos
-Asegúrate de tener instalado [Node.js](https://nodejs.org/es/) en tu equipo. Esto nos permite usar el gestor de paquetes `npm`.
+---
 
-### 2. Instalación de Dependencias
-Abre tu terminal en la carpeta raíz del proyecto y navega hacia la carpeta del frontend para instalar las librerías necesarias (esto solo se hace la primera vez):
+## 🚀 Pasos para la Replicación (En GitHub Codespaces)
+
+Sigue estos pasos en orden para encender el sistema completo:
+
+### 1. Levantar la Infraestructura (Base de Datos)
+
+Abre una terminal y ejecuta el siguiente comando para iniciar el contenedor de MySQL:
 
 ```bash
-#1. Entra a la carpeta del frontend
+docker-compose up -d
+```
+
+> **Nota:** Docker leerá automáticamente el archivo `setup.sql` para inyectar las tablas y los datos semilla del Rancho "La Esperanza".
+
+### 2. Configurar y Encender el Backend (Python)
+
+En la misma terminal (o una nueva), instala las dependencias y arranca la API:
+
+```bash
+# Instalar librerías necesarias
+pip install mysql-connector-python flask flask-cors
+
+# Ejecutar el servidor de la API
+python "mainTarea (1).py"
+```
+
+El servidor indicará que está escuchando en el puerto **3000**.
+
+### 3. Configurar y Encender el Frontend (React)
+
+Abre una nueva terminal, entra a la carpeta del frontend y arranca el servidor de desarrollo:
+
+```bash
 cd frontend
-
-# 2. Instala las dependencias (React, Heroicons, Tailwind, etc.)
 npm install
-3. Levantar el Servidor Local
-Una vez que termine la instalación, ejecuta el servidor de desarrollo:
-
-Bash
-
 npm run dev
-4. Ver el Proyecto
-La terminal te mostrará un enlace local (usualmente http://localhost:5173).
-Mantén presionada la tecla Ctrl (o Cmd en Mac) y haz clic en el enlace, o cópialo y pégalo en tu navegador.
+```
+
+---
+
+## ⚙️ Configuración Crítica de Red (Codespaces)
+
+> **IMPORTANTE:** Para que el sistema funcione en la nube, debes configurar la visibilidad de los puertos manualmente:
+>
+> 1. Ve a la pestaña **Ports (Puertos)** en la parte inferior de VS Code.
+> 2. Busca el puerto **3000** (Python) y el puerto **5173** (React).
+> 3. Haz clic derecho en la columna *Visibility* de cada uno y cámbialos a **Public**.
+
+**Enlace de Datos:**
+
+1. Copia la *Forwarded Address* del puerto **3000**.
+2. Abre el archivo `src/components/AreasRiego.jsx`.
+3. En la línea **14**, pega esa dirección antes del endpoint `/api/v1/areas-riego`.
+
+---
+
+## 🛠️ Solución de Problemas Comunes
+
+* **Error:** Lost connection to MySQL
+
+  * **Causa:** El contenedor está terminando de bootear.
+  * **Solución:** Espera 10 segundos y reinicia el script de Python.
+
+* **Error:** Table AreaRiego doesn't exist
+
+  * **Causa:** Fallo en la inyección inicial del SQL.
+  * **Solución:** Ejecuta:
+
+```bash
+docker exec -it irrigo_mysql mysql -u root IrriGo < setup.sql
+```
+
+* **Error:** Failed to fetch / SyntaxError
+
+  * **Causa:** El puerto **3000** sigue en modo Privado.
+  * **Solución:** Cambia la visibilidad del puerto a **Public** en la pestaña *Ports*.
+
+---
+
+## 📊 Datos de Prueba
+
+El sistema se inicializa con datos reales del sector agrícola en Chihuahua:
+
+* **Predio:** Rancho La Esperanza.
+* **Áreas de Control:**
+
+  * Parcela Norte (Estado Óptimo).
+  * Parcela Oeste (Estado Crítico).
+
+---
