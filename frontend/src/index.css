@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@theme {
+  --color-earth-dark: #1A1C19;    /* Fondo oscuro */
+  --color-earth-panel: #242922;   /* Tarjetas */
+  --color-creamy-blue: #A7C7E7;   /* <--- TU NUEVO AZUL CREMOSO */
+  --color-river-blue: #7dd3fc;    /* Azul secundario */
+  --color-soil-brown: #A07855;    /* Tono tierra para alertas */
+}
+
+body {
+  @apply bg-earth-dark text-[#E2E8F0];
+  margin: 0;
+}
+
+/* ── Leaflet Popup Dark Theme ── */
+.leaflet-popup-content-wrapper {
+  background: #242922 !important;
+  color: #e2e8f0 !important;
+  border-radius: 1rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+  backdrop-filter: blur(12px);
+}
+
+.leaflet-popup-content h4 {
+  color: #fff !important;
+}
+
+.leaflet-popup-content p {
+  color: #9ca3af !important;
+}
+
+.leaflet-popup-tip {
+  background: #242922 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.leaflet-popup-close-button {
+  color: #9ca3af !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: #fff !important;
+}
+
+/* ── Fade In Animation ── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* ── Daltonismo: Deuteranomalía (rojo-verde → azul-naranja) ── */
+body.daltonismo-deutan {
+  --color-creamy-blue: #6FAED9;
+  --color-river-blue: #E8A838;
+  --color-soil-brown: #D4A843;
+}
+
+body.daltonismo-deutan .text-emerald-400 { color: #2563eb !important; }
+body.daltonismo-deutan .text-emerald-500 { color: #1d4ed8 !important; }
+body.daltonismo-deutan .bg-emerald-500\/20 { background-color: rgba(37,99,235,0.2) !important; }
+body.daltonismo-deutan .bg-emerald-600 { background-color: #1d4ed8 !important; }
+body.daltonismo-deutan .border-emerald-500\/20 { border-color: rgba(37,99,235,0.2) !important; }
+body.daltonismo-deutan .border-emerald-500\/30 { border-color: rgba(37,99,235,0.3) !important; }
+body.daltonismo-deutan .text-red-400 { color: #ea580c !important; }
+body.daltonismo-deutan .text-red-500 { color: #c2410c !important; }
+body.daltonismo-deutan .bg-red-500 { background-color: #ea580c !important; }
+body.daltonismo-deutan .bg-red-500\/10 { background-color: rgba(234,88,12,0.1) !important; }
+body.daltonismo-deutan .border-red-500\/40 { border-color: rgba(234,88,12,0.4) !important; }
+
+/* ── Daltonismo: Protanomalía (alto contraste) ── */
+body.daltonismo-protan {
+  --color-creamy-blue: #A78BFA;
+  --color-river-blue: #38BDF8;
+  --color-soil-brown: #FBBF24;
+}
+
+body.daltonismo-protan .text-emerald-400 { color: #7c3aed !important; }
+body.daltonismo-protan .text-emerald-500 { color: #6d28d9 !important; }
+body.daltonismo-protan .bg-emerald-500\/20 { background-color: rgba(124,58,237,0.2) !important; }
+body.daltonismo-protan .bg-emerald-600 { background-color: #6d28d9 !important; }
+body.daltonismo-protan .border-emerald-500\/20 { border-color: rgba(124,58,237,0.2) !important; }
+body.daltonismo-protan .border-emerald-500\/30 { border-color: rgba(124,58,237,0.3) !important; }
+body.daltonismo-protan .text-red-400 { color: #dc2626 !important; }
+body.daltonismo-protan .bg-red-500 { background-color: #dc2626 !important; }
+body.daltonismo-protan .bg-red-500\/10 { background-color: rgba(220,38,38,0.1) !important; }
+body.daltonismo-protan .border-red-500\/40 { border-color: rgba(220,38,38,0.4) !important; }

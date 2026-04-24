@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  basededatos:
+    image: mysql:8.0
+    container_name: irrigo_mysql
+    environment:
+      # Esto hace que no pida contraseña, justo como lo tienes en tu main.py
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+      MYSQL_DATABASE: IrriGo
+    ports:
+      - "3306:3306"
+    volumes:
+      # Se eliminó la línea extra que causaba el error de "missing a mount target"
+      - ./IrriGo.sql:/docker-entrypoint-initdb.d/setup.sql

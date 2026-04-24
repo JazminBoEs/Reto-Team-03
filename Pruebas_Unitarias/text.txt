@@ -1,0 +1,45 @@
+README - Pruebas Unitarias
+==========================
+
+Resumen de resultados:
+----------------------
+- Archivo de pruebas ejecutado: `Pruebas_Unitarias/test_app.py`
+- Fixture global: `Pruebas_Unitarias/conftest.py`
+- Comando ejecutado: `pytest Pruebas_Unitarias/test_app.py -v`
+- Resultado: todas las pruebas pasaron con éxito.
+- Salida del comando: exit code 0.
+
+Qué se prueba:
+--------------
+- Endpoints de colección y de ítem para `usuarios`, `sensores` y `usuarios-predios`.
+- Operaciones HTTP:
+  - `GET` colección e ítem exitosos (200)
+  - `POST` exitosos con respuesta del objeto creado (201)
+  - `DELETE` exitoso sin body (204)
+  - `404` para recursos inexistentes o ítems no encontrados
+  - `500` cuando `main.execute_query` lanza una excepción
+  - `400` para entradas inválidas en login de usuario
+- Se parchea solamente `main.execute_query` con `unittest.mock.patch("main.execute_query")`.
+- Para `usuarios-predios` se prueba exclusivamente a través de `app.test_client()`.
+
+Pasos para ejecutar las pruebas:
+-------------------------------
+1. Asegúrate de estar en la carpeta raíz del proyecto:
+   ```bash
+   cd /workspaces/Reto-Team-03
+   ```
+2. Instala las dependencias necesarias en el entorno Python, si no están instaladas:
+   ```bash
+   pip install pytest flask
+   ```
+3. Ejecuta el archivo de pruebas con pytest:
+   ```bash
+   pytest Pruebas_Unitarias/test_app.py -v
+   ```
+4. Verifica que la salida muestre pruebas exitosas y que el comando termine con `exit code 0`.
+
+Notas importantes:
+------------------
+- No se levanta un servidor real: las pruebas usan `app.test_client()`.
+- No se llama a funciones internas de los endpoints directamente; se hacen solicitudes HTTP simuladas.
+- El módulo `main.execute_query` está parcheado para evitar acceso real a la base de datos.
