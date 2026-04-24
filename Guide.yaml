@@ -1,56 +1,62 @@
 openapi: 3.0.0
 info:
-  title: API de Sistema Agrícola
-  description: >
-    API REST generada para la gestión integral de recursos agrícolas,
-    incluyendo usuarios, predios, áreas de riego, sensores y mediciones históricas.
+  title: IrriGo API
   version: 1.0.0
+  description: Especificación OpenAPI para el sistema de riego agrícola IrriGo.
   contact:
-    name: Soporte de Arquitectura
-    email: arquitectura@ejemplo.com
-    url: https://ejemplo.com/soporte
+    name: Soporte IrriGo
+    email: soporte@irrigo.com
 servers:
   - url: http://localhost:3000/api/v1
-    description: Servidor de Desarrollo
-
 tags:
-  - name: Usuario
-  - name: Predio
-  - name: Usuario_predio
-  - name: RegistroAuditoria
-  - name: ModuloControl
-  - name: AreaRiego
-  - name: Sensor
-  - name: ConfiguracionCultivo
-  - name: Alerta
-  - name: MedicionHistorica
-
+  - name: Usuarios
+    description: Operaciones relacionadas con los usuarios del sistema
+  - name: Predios
+    description: Operaciones sobre los predios agrícolas
+  - name: UsuariosPredios
+    description: Asignaciones de administración entre usuarios y predios
+  - name: ModulosControl
+    description: Gestión de los módulos de control hardware
+  - name: AreasRiego
+    description: Gestión de las diferentes áreas o parcelas de riego
+  - name: Sensores
+    description: Registro y lectura de sensores de campo
+  - name: ConfiguracionesCultivo
+    description: Parámetros y umbrales de riego por cultivo
+  - name: MedicionesHistoricas
+    description: Historial de datos climáticos y del suelo
+  - name: Alertas
+    description: Sistema de notificaciones y alertas
+  - name: RegistrosAuditoria
+    description: Bitácora de cambios y acciones de los usuarios
 paths:
-  # ==========================================
-  # /usuarios
-  # ==========================================
   /usuarios:
     get:
-      tags: [Usuario]
-      summary: Obtener todos los usuarios
-      description: Retorna una lista completa de todos los usuarios registrados en el sistema.
+      summary: Obtener lista de usuarios
+      description: Retorna una lista paginada de todos los usuarios registrados en el sistema.
       operationId: getUsuarios
+      tags: [Usuarios]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
       responses:
         '200':
-          description: Lista de usuarios obtenida exitosamente.
+          description: Lista de usuarios obtenida exitosamente
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Usuario'
+                  $ref: '#/components/schemas/UsuarioResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     post:
-      tags: [Usuario]
-      summary: Crear un usuario
-      description: Crea un nuevo registro de usuario en la base de datos.
-      operationId: createUsuario
+      summary: Crear nuevo usuario
+      description: Crea un nuevo usuario en la base de datos con sus credenciales básicas.
+      operationId: crearUsuario
+      tags: [Usuarios]
       requestBody:
         required: true
         content:
@@ -59,42 +65,41 @@ paths:
               $ref: '#/components/schemas/UsuarioInput'
       responses:
         '201':
-          description: Usuario creado exitosamente.
+          description: Usuario creado exitosamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Usuario'
+                $ref: '#/components/schemas/UsuarioResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
-          $ref: '#/components/responses/ServerError'
-
-  /usuarios/{id}:
+          $ref: '#/components/responses/InternalError'
+  /usuarios/{idUsuario}:
     get:
-      tags: [Usuario]
-      summary: Obtener un usuario por ID
-      description: Retorna los detalles de un usuario específico basado en su ID.
+      summary: Obtener usuario por ID
+      description: Obtiene los detalles de un usuario específico mediante su identificador único.
       operationId: getUsuarioById
+      tags: [Usuarios]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdUsuario'
       responses:
         '200':
-          description: Usuario encontrado exitosamente.
+          description: Usuario encontrado
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Usuario'
+                $ref: '#/components/schemas/UsuarioResponse'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     put:
-      tags: [Usuario]
-      summary: Actualizar un usuario
-      description: Actualiza la información de un usuario existente.
-      operationId: updateUsuario
+      summary: Actualizar usuario
+      description: Actualiza los datos personales y de contacto de un usuario existente.
+      operationId: actualizarUsuario
+      tags: [Usuarios]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdUsuario'
       requestBody:
         required: true
         content:
@@ -103,44 +108,66 @@ paths:
               $ref: '#/components/schemas/UsuarioInput'
       responses:
         '200':
-          description: Usuario actualizado exitosamente.
+          description: Usuario actualizado exitosamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Usuario'
+                $ref: '#/components/schemas/UsuarioResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     delete:
-      tags: [Usuario]
-      summary: Eliminar un usuario
-      description: Elimina lógicamente o físicamente un usuario del sistema.
-      operationId: deleteUsuario
+      summary: Eliminar usuario
+      description: Elimina un usuario del sistema permanentemente.
+      operationId: eliminarUsuario
+      tags: [Usuarios]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdUsuario'
       responses:
         '204':
-          description: Usuario eliminado exitosamente (Sin contenido de respuesta).
+          description: Usuario eliminado exitosamente
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
-
-  # ==========================================
-  # /predios
-  # ==========================================
-  /predios:
-    get:
-      tags: [Predio]
-      summary: Obtener todos los predios
-      description: Retorna una lista de todos los predios agrícolas registrados.
-      operationId: getPredios
+          $ref: '#/components/responses/InternalError'
+  /usuarios/login:
+    post:
+      summary: Autenticación básica de usuario
+      description: Valida el correo y contraseña, retornando los datos del usuario omitiendo la contraseña.
+      operationId: loginUsuario
+      tags: [Usuarios]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
       responses:
         '200':
-          description: Lista de predios obtenida exitosamente.
+          description: Autenticación exitosa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /predios:
+    get:
+      summary: Obtener lista de predios
+      description: Devuelve una lista paginada de todos los predios agrícolas registrados.
+      operationId: getPredios
+      tags: [Predios]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Lista de predios obtenida exitosamente
           content:
             application/json:
               schema:
@@ -148,12 +175,12 @@ paths:
                 items:
                   $ref: '#/components/schemas/Predio'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     post:
-      tags: [Predio]
-      summary: Crear un predio
-      description: Registra un nuevo predio en el sistema.
-      operationId: createPredio
+      summary: Crear nuevo predio
+      description: Registra un nuevo predio con su ubicación geográfica.
+      operationId: crearPredio
+      tags: [Predios]
       requestBody:
         required: true
         content:
@@ -162,7 +189,7 @@ paths:
               $ref: '#/components/schemas/PredioInput'
       responses:
         '201':
-          description: Predio creado exitosamente.
+          description: Predio creado exitosamente
           content:
             application/json:
               schema:
@@ -170,19 +197,18 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
-          $ref: '#/components/responses/ServerError'
-
-  /predios/{id}:
+          $ref: '#/components/responses/InternalError'
+  /predios/{idPredio}:
     get:
-      tags: [Predio]
-      summary: Obtener un predio por ID
-      description: Retorna la información de un predio específico.
+      summary: Obtener predio por ID
+      description: Recupera la información detallada de un predio según su ID.
       operationId: getPredioById
+      tags: [Predios]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdPredio'
       responses:
         '200':
-          description: Predio encontrado exitosamente.
+          description: Predio encontrado
           content:
             application/json:
               schema:
@@ -190,14 +216,14 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     put:
-      tags: [Predio]
-      summary: Actualizar un predio
-      description: Actualiza los datos de un predio existente.
-      operationId: updatePredio
+      summary: Actualizar predio
+      description: Modifica el nombre o coordenadas de un predio existente.
+      operationId: actualizarPredio
+      tags: [Predios]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdPredio'
       requestBody:
         required: true
         content:
@@ -206,7 +232,7 @@ paths:
               $ref: '#/components/schemas/PredioInput'
       responses:
         '200':
-          description: Predio actualizado exitosamente.
+          description: Predio actualizado exitosamente
           content:
             application/json:
               schema:
@@ -216,240 +242,139 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     delete:
-      tags: [Predio]
-      summary: Eliminar un predio
-      description: Elimina un predio específico del sistema.
-      operationId: deletePredio
+      summary: Eliminar predio
+      description: Borra un predio del sistema de manera definitiva.
+      operationId: eliminarPredio
+      tags: [Predios]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdPredio'
       responses:
         '204':
-          description: Predio eliminado exitosamente (Sin contenido de respuesta).
+          description: Predio eliminado exitosamente
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
-
-  # ==========================================
-  # /usuarios-predios
-  # ==========================================
+          $ref: '#/components/responses/InternalError'
   /usuarios-predios:
     get:
-      tags: [Usuario_predio]
-      summary: Obtener todas las asignaciones usuario-predio
-      description: Retorna la lista de relaciones entre usuarios y predios con sus respectivos roles.
+      summary: Obtener asignaciones de usuarios a predios
+      description: Retorna la relación de qué usuarios tienen acceso o administración sobre qué predios.
       operationId: getUsuariosPredios
+      tags: [UsuariosPredios]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/QueryIdUsuario'
+        - $ref: '#/components/parameters/QueryIdPredio'
       responses:
         '200':
-          description: Lista de asignaciones obtenida exitosamente.
+          description: Asignaciones obtenidas exitosamente
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Usuario_predio'
+                  $ref: '#/components/schemas/UsuarioPredio'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     post:
-      tags: [Usuario_predio]
-      summary: Crear asignación usuario-predio
-      description: Asigna un usuario a un predio con un rol específico.
-      operationId: createUsuarioPredio
+      summary: Asignar usuario a predio
+      description: Crea un vínculo M:N asignando un usuario a un predio específico, indicando si es administrador.
+      operationId: asignarUsuarioPredio
+      tags: [UsuariosPredios]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Usuario_predioInput'
+              $ref: '#/components/schemas/UsuarioPredioInput'
       responses:
         '201':
-          description: Asignación creada exitosamente.
+          description: Asignación creada exitosamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Usuario_predio'
+                $ref: '#/components/schemas/UsuarioPredio'
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
-          $ref: '#/components/responses/ServerError'
-
-  /usuarios-predios/{id}:
+          $ref: '#/components/responses/InternalError'
+  /usuarios-predios/{idUsuario}/{idPredio}:
     get:
-      tags: [Usuario_predio]
-      summary: Obtener asignación usuario-predio
-      description: Retorna los detalles de una asignación específica usando un ID compuesto.
-      operationId: getUsuarioPredioById
+      summary: Obtener asignación específica
+      description: Recupera el detalle de una asignación concreta entre un usuario y un predio.
+      operationId: getUsuarioPredioByIds
+      tags: [UsuariosPredios]
       parameters:
-        - $ref: '#/components/parameters/IdParamString'
+        - $ref: '#/components/parameters/PathIdUsuario'
+        - $ref: '#/components/parameters/PathIdPredio'
       responses:
         '200':
-          description: Asignación encontrada exitosamente.
+          description: Asignación encontrada exitosamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Usuario_predio'
+                $ref: '#/components/schemas/UsuarioPredio'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     put:
-      tags: [Usuario_predio]
       summary: Actualizar asignación
-      description: Actualiza el rol u otros datos de una asignación usuario-predio.
-      operationId: updateUsuarioPredio
+      description: Modifica los permisos (por ejemplo, el flag Admin) de una asignación existente.
+      operationId: actualizarUsuarioPredio
+      tags: [UsuariosPredios]
       parameters:
-        - $ref: '#/components/parameters/IdParamString'
+        - $ref: '#/components/parameters/PathIdUsuario'
+        - $ref: '#/components/parameters/PathIdPredio'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Usuario_predioInput'
+              $ref: '#/components/schemas/UsuarioPredioUpdateInput'
       responses:
         '200':
-          description: Asignación actualizada exitosamente.
+          description: Asignación actualizada exitosamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Usuario_predio'
+                $ref: '#/components/schemas/UsuarioPredio'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     delete:
-      tags: [Usuario_predio]
       summary: Eliminar asignación
-      description: Remueve la asignación de un usuario a un predio.
-      operationId: deleteUsuarioPredio
+      description: Desvincula un usuario de un predio, removiendo su acceso.
+      operationId: eliminarUsuarioPredio
+      tags: [UsuariosPredios]
       parameters:
-        - $ref: '#/components/parameters/IdParamString'
+        - $ref: '#/components/parameters/PathIdUsuario'
+        - $ref: '#/components/parameters/PathIdPredio'
       responses:
         '204':
-          description: Asignación eliminada exitosamente (Sin contenido de respuesta).
+          description: Asignación eliminada exitosamente
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
-
-  # ==========================================
-  # /registros-auditoria
-  # ==========================================
-  /registros-auditoria:
-    get:
-      tags: [RegistroAuditoria]
-      summary: Obtener auditorías
-      description: Retorna el historial de registros de auditoría del sistema.
-      operationId: getRegistrosAuditoria
-      responses:
-        '200':
-          description: Lista de registros obtenida exitosamente.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RegistroAuditoria'
-        '500':
-          $ref: '#/components/responses/ServerError'
-    post:
-      tags: [RegistroAuditoria]
-      summary: Crear registro de auditoría
-      description: Inserta un nuevo evento en el registro de auditoría.
-      operationId: createRegistroAuditoria
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RegistroAuditoriaInput'
-      responses:
-        '201':
-          description: Registro de auditoría creado exitosamente.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RegistroAuditoria'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-  /registros-auditoria/{id}:
-    get:
-      tags: [RegistroAuditoria]
-      summary: Obtener auditoría por ID
-      description: Retorna un registro de auditoría específico.
-      operationId: getRegistroAuditoriaById
-      parameters:
-        - $ref: '#/components/parameters/IdParam'
-      responses:
-        '200':
-          description: Registro encontrado exitosamente.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RegistroAuditoria'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/ServerError'
-    put:
-      tags: [RegistroAuditoria]
-      summary: Actualizar registro auditoría
-      description: Modifica un registro de auditoría (uso administrativo).
-      operationId: updateRegistroAuditoria
-      parameters:
-        - $ref: '#/components/parameters/IdParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RegistroAuditoriaInput'
-      responses:
-        '200':
-          description: Registro actualizado exitosamente.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RegistroAuditoria'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/ServerError'
-    delete:
-      tags: [RegistroAuditoria]
-      summary: Eliminar registro auditoría
-      description: Elimina un registro de auditoría del sistema.
-      operationId: deleteRegistroAuditoria
-      parameters:
-        - $ref: '#/components/parameters/IdParam'
-      responses:
-        '204':
-          description: Registro eliminado exitosamente (Sin contenido de respuesta).
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-  # ==========================================
-  # /modulos-control
-  # ==========================================
+          $ref: '#/components/responses/InternalError'
   /modulos-control:
     get:
-      tags: [ModuloControl]
       summary: Obtener módulos de control
-      description: Retorna la lista de todos los módulos de control (hardware).
+      description: Retorna una lista de todos los módulos controladores de hardware.
       operationId: getModulosControl
+      tags: [ModulosControl]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
       responses:
         '200':
-          description: Lista de módulos obtenida exitosamente.
+          description: Lista de módulos obtenida exitosamente
           content:
             application/json:
               schema:
@@ -457,12 +382,12 @@ paths:
                 items:
                   $ref: '#/components/schemas/ModuloControl'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     post:
-      tags: [ModuloControl]
-      summary: Crear módulo
-      description: Registra un nuevo módulo de control en el sistema.
-      operationId: createModuloControl
+      summary: Crear módulo de control
+      description: Da de alta un nuevo módulo de control indicando su identificador de red.
+      operationId: crearModuloControl
+      tags: [ModulosControl]
       requestBody:
         required: true
         content:
@@ -471,7 +396,7 @@ paths:
               $ref: '#/components/schemas/ModuloControlInput'
       responses:
         '201':
-          description: Módulo de control creado exitosamente.
+          description: Módulo creado exitosamente
           content:
             application/json:
               schema:
@@ -479,19 +404,18 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
-          $ref: '#/components/responses/ServerError'
-
-  /modulos-control/{id}:
+          $ref: '#/components/responses/InternalError'
+  /modulos-control/{idModulo}:
     get:
-      tags: [ModuloControl]
       summary: Obtener módulo por ID
-      description: Obtiene la información detallada de un módulo específico.
+      description: Recupera la información de un módulo controlador específico por su ID.
       operationId: getModuloControlById
+      tags: [ModulosControl]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdModulo'
       responses:
         '200':
-          description: Módulo encontrado exitosamente.
+          description: Módulo encontrado exitosamente
           content:
             application/json:
               schema:
@@ -499,14 +423,14 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     put:
-      tags: [ModuloControl]
       summary: Actualizar módulo
-      description: Actualiza los datos de un módulo de control.
-      operationId: updateModuloControl
+      description: Actualiza los detalles de un módulo, como su nombre o estado activo/inactivo.
+      operationId: actualizarModuloControl
+      tags: [ModulosControl]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdModulo'
       requestBody:
         required: true
         content:
@@ -515,7 +439,7 @@ paths:
               $ref: '#/components/schemas/ModuloControlInput'
       responses:
         '200':
-          description: Módulo actualizado exitosamente.
+          description: Módulo actualizado exitosamente
           content:
             application/json:
               schema:
@@ -525,34 +449,35 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     delete:
-      tags: [ModuloControl]
       summary: Eliminar módulo
-      description: Desactiva o elimina un módulo de control de la base de datos.
-      operationId: deleteModuloControl
+      description: Elimina un módulo de control de la base de datos.
+      operationId: eliminarModuloControl
+      tags: [ModulosControl]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdModulo'
       responses:
         '204':
-          description: Módulo eliminado exitosamente (Sin contenido de respuesta).
+          description: Módulo eliminado exitosamente
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
-
-  # ==========================================
-  # /areas-riego
-  # ==========================================
+          $ref: '#/components/responses/InternalError'
   /areas-riego:
     get:
-      tags: [AreaRiego]
       summary: Obtener áreas de riego
-      description: Retorna una lista con todas las áreas de riego configuradas.
+      description: Devuelve las diferentes áreas o parcelas de riego, filtrables por predio o módulo.
       operationId: getAreasRiego
+      tags: [AreasRiego]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/QueryIdPredio'
+        - $ref: '#/components/parameters/QueryIdModulo'
       responses:
         '200':
-          description: Lista de áreas obtenida exitosamente.
+          description: Lista de áreas de riego obtenida exitosamente
           content:
             application/json:
               schema:
@@ -560,12 +485,12 @@ paths:
                 items:
                   $ref: '#/components/schemas/AreaRiego'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     post:
-      tags: [AreaRiego]
       summary: Crear área de riego
-      description: Crea una nueva área de riego asociada a un predio.
-      operationId: createAreaRiego
+      description: Registra una nueva parcela o área de riego perteneciente a un predio.
+      operationId: crearAreaRiego
+      tags: [AreasRiego]
       requestBody:
         required: true
         content:
@@ -574,7 +499,7 @@ paths:
               $ref: '#/components/schemas/AreaRiegoInput'
       responses:
         '201':
-          description: Área de riego creada exitosamente.
+          description: Área de riego creada exitosamente
           content:
             application/json:
               schema:
@@ -582,19 +507,18 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
-          $ref: '#/components/responses/ServerError'
-
-  /areas-riego/{id}:
+          $ref: '#/components/responses/InternalError'
+  /areas-riego/{idArea}:
     get:
-      tags: [AreaRiego]
       summary: Obtener área de riego por ID
-      description: Busca y retorna la información de un área de riego específica.
+      description: Busca y retorna la información de una parcela de riego específica.
       operationId: getAreaRiegoById
+      tags: [AreasRiego]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdArea'
       responses:
         '200':
-          description: Área encontrada exitosamente.
+          description: Área de riego encontrada exitosamente
           content:
             application/json:
               schema:
@@ -602,14 +526,14 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     put:
-      tags: [AreaRiego]
       summary: Actualizar área de riego
-      description: Modifica los parámetros de un área de riego existente.
-      operationId: updateAreaRiego
+      description: Modifica los parámetros de un área, como su tamaño en hectáreas o su estado.
+      operationId: actualizarAreaRiego
+      tags: [AreasRiego]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdArea'
       requestBody:
         required: true
         content:
@@ -618,7 +542,7 @@ paths:
               $ref: '#/components/schemas/AreaRiegoInput'
       responses:
         '200':
-          description: Área de riego actualizada exitosamente.
+          description: Área de riego actualizada exitosamente
           content:
             application/json:
               schema:
@@ -628,34 +552,35 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     delete:
-      tags: [AreaRiego]
       summary: Eliminar área de riego
-      description: Remueve un área de riego del sistema.
-      operationId: deleteAreaRiego
+      description: Elimina una parcela de la base de datos.
+      operationId: eliminarAreaRiego
+      tags: [AreasRiego]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdArea'
       responses:
         '204':
-          description: Área eliminada exitosamente (Sin contenido de respuesta).
+          description: Área de riego eliminada exitosamente
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
-
-  # ==========================================
-  # /sensores
-  # ==========================================
+          $ref: '#/components/responses/InternalError'
   /sensores:
     get:
-      tags: [Sensor]
       summary: Obtener sensores
-      description: Retorna una lista con todos los sensores registrados.
+      description: Retorna la lista de sensores desplegados, filtrables por módulo o área.
       operationId: getSensores
+      tags: [Sensores]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/QueryIdModulo'
+        - $ref: '#/components/parameters/QueryIdArea'
       responses:
         '200':
-          description: Lista de sensores obtenida exitosamente.
+          description: Lista de sensores obtenida exitosamente
           content:
             application/json:
               schema:
@@ -663,12 +588,12 @@ paths:
                 items:
                   $ref: '#/components/schemas/Sensor'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     post:
-      tags: [Sensor]
       summary: Crear sensor
-      description: Registra un nuevo sensor asociándolo a un módulo y área.
-      operationId: createSensor
+      description: Da de alta un nuevo sensor físico indicando su posición, batería y señal inicial.
+      operationId: crearSensor
+      tags: [Sensores]
       requestBody:
         required: true
         content:
@@ -677,7 +602,7 @@ paths:
               $ref: '#/components/schemas/SensorInput'
       responses:
         '201':
-          description: Sensor creado exitosamente.
+          description: Sensor creado exitosamente
           content:
             application/json:
               schema:
@@ -685,19 +610,18 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
-          $ref: '#/components/responses/ServerError'
-
-  /sensores/{id}:
+          $ref: '#/components/responses/InternalError'
+  /sensores/{idSensor}:
     get:
-      tags: [Sensor]
       summary: Obtener sensor por ID
-      description: Retorna los datos y estado de un sensor específico.
+      description: Recupera la información estática y de estado actual de un sensor específico.
       operationId: getSensorById
+      tags: [Sensores]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdSensor'
       responses:
         '200':
-          description: Sensor encontrado exitosamente.
+          description: Sensor encontrado exitosamente
           content:
             application/json:
               schema:
@@ -705,14 +629,14 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     put:
-      tags: [Sensor]
       summary: Actualizar sensor
-      description: Actualiza los niveles de batería, señal u otra información del sensor.
-      operationId: updateSensor
+      description: Actualiza la lectura de la batería, señal o ubicación de un sensor.
+      operationId: actualizarSensor
+      tags: [Sensores]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdSensor'
       requestBody:
         required: true
         content:
@@ -721,7 +645,7 @@ paths:
               $ref: '#/components/schemas/SensorInput'
       responses:
         '200':
-          description: Sensor actualizado exitosamente.
+          description: Sensor actualizado exitosamente
           content:
             application/json:
               schema:
@@ -731,34 +655,34 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     delete:
-      tags: [Sensor]
       summary: Eliminar sensor
-      description: Da de baja a un sensor en el sistema.
-      operationId: deleteSensor
+      description: Elimina el registro de un dispositivo sensor.
+      operationId: eliminarSensor
+      tags: [Sensores]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdSensor'
       responses:
         '204':
-          description: Sensor eliminado exitosamente (Sin contenido de respuesta).
+          description: Sensor eliminado exitosamente
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
-
-  # ==========================================
-  # /configuraciones-cultivos
-  # ==========================================
-  /configuraciones-cultivos:
+          $ref: '#/components/responses/InternalError'
+  /configuraciones-cultivo:
     get:
-      tags: [ConfiguracionCultivo]
-      summary: Obtener configuraciones de cultivos
-      description: Retorna la lista de todas las configuraciones agronómicas guardadas.
-      operationId: getConfiguracionesCultivos
+      summary: Obtener configuraciones de cultivo
+      description: Devuelve los perfiles de configuración agronómica definidos para las áreas.
+      operationId: getConfiguracionesCultivo
+      tags: [ConfiguracionesCultivo]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/QueryIdArea'
       responses:
         '200':
-          description: Configuraciones obtenidas exitosamente.
+          description: Lista de configuraciones obtenida exitosamente
           content:
             application/json:
               schema:
@@ -766,12 +690,12 @@ paths:
                 items:
                   $ref: '#/components/schemas/ConfiguracionCultivo'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     post:
-      tags: [ConfiguracionCultivo]
       summary: Crear configuración
-      description: Registra una nueva configuración de cultivo para un área específica.
-      operationId: createConfiguracionCultivo
+      description: Establece los umbrales ideales de humedad, lámina de riego y tipo de tierra para un área.
+      operationId: crearConfiguracionCultivo
+      tags: [ConfiguracionesCultivo]
       requestBody:
         required: true
         content:
@@ -780,7 +704,7 @@ paths:
               $ref: '#/components/schemas/ConfiguracionCultivoInput'
       responses:
         '201':
-          description: Configuración creada exitosamente.
+          description: Configuración creada exitosamente
           content:
             application/json:
               schema:
@@ -788,19 +712,18 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
-          $ref: '#/components/responses/ServerError'
-
-  /configuraciones-cultivos/{id}:
+          $ref: '#/components/responses/InternalError'
+  /configuraciones-cultivo/{idConfiguracion}:
     get:
-      tags: [ConfiguracionCultivo]
       summary: Obtener configuración por ID
-      description: Obtiene los detalles de una configuración de cultivo en particular.
+      description: Lee los parámetros hídricos configurados para un identificador específico.
       operationId: getConfiguracionCultivoById
+      tags: [ConfiguracionesCultivo]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdConfiguracion'
       responses:
         '200':
-          description: Configuración encontrada exitosamente.
+          description: Configuración encontrada exitosamente
           content:
             application/json:
               schema:
@@ -808,14 +731,14 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     put:
-      tags: [ConfiguracionCultivo]
       summary: Actualizar configuración
-      description: Modifica los parámetros de una configuración de cultivo.
-      operationId: updateConfiguracionCultivo
+      description: Modifica los umbrales de rango de humedad y capacidad de campo de un área.
+      operationId: actualizarConfiguracionCultivo
+      tags: [ConfiguracionesCultivo]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdConfiguracion'
       requestBody:
         required: true
         content:
@@ -824,7 +747,7 @@ paths:
               $ref: '#/components/schemas/ConfiguracionCultivoInput'
       responses:
         '200':
-          description: Configuración actualizada exitosamente.
+          description: Configuración actualizada exitosamente
           content:
             application/json:
               schema:
@@ -834,137 +757,34 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     delete:
-      tags: [ConfiguracionCultivo]
       summary: Eliminar configuración
-      description: Borra una configuración de cultivo del sistema.
-      operationId: deleteConfiguracionCultivo
+      description: Borra la configuración de cultivo asociada a un área.
+      operationId: eliminarConfiguracionCultivo
+      tags: [ConfiguracionesCultivo]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdConfiguracion'
       responses:
         '204':
-          description: Configuración eliminada exitosamente (Sin contenido de respuesta).
+          description: Configuración eliminada exitosamente
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
-
-  # ==========================================
-  # /alertas
-  # ==========================================
-  /alertas:
-    get:
-      tags: [Alerta]
-      summary: Obtener alertas
-      description: Retorna la lista de alertas generadas en el sistema.
-      operationId: getAlertas
-      responses:
-        '200':
-          description: Lista de alertas obtenida exitosamente.
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Alerta'
-        '500':
-          $ref: '#/components/responses/ServerError'
-    post:
-      tags: [Alerta]
-      summary: Crear alerta
-      description: Genera una nueva alerta manual o automática para un área y usuario.
-      operationId: createAlerta
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AlertaInput'
-      responses:
-        '201':
-          description: Alerta generada exitosamente.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Alerta'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-  /alertas/{id}:
-    get:
-      tags: [Alerta]
-      summary: Obtener alerta por ID
-      description: Busca y retorna el detalle de una alerta específica.
-      operationId: getAlertaById
-      parameters:
-        - $ref: '#/components/parameters/IdParam'
-      responses:
-        '200':
-          description: Alerta encontrada exitosamente.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Alerta'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/ServerError'
-    put:
-      tags: [Alerta]
-      summary: Actualizar alerta
-      description: Modifica el estado de una alerta (ej. marcarla como leída).
-      operationId: updateAlerta
-      parameters:
-        - $ref: '#/components/parameters/IdParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AlertaInput'
-      responses:
-        '200':
-          description: Alerta actualizada exitosamente.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Alerta'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/ServerError'
-    delete:
-      tags: [Alerta]
-      summary: Eliminar alerta
-      description: Elimina un registro de alerta del historial.
-      operationId: deleteAlerta
-      parameters:
-        - $ref: '#/components/parameters/IdParam'
-      responses:
-        '204':
-          description: Alerta eliminada exitosamente (Sin contenido de respuesta).
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/ServerError'
-
-  # ==========================================
-  # /mediciones-historicas
-  # ==========================================
+          $ref: '#/components/responses/InternalError'
   /mediciones-historicas:
     get:
-      tags: [MedicionHistorica]
-      summary: Obtener mediciones históricas
-      description: Retorna la colección de todas las lecturas de sensores almacenadas.
+      summary: Obtener mediciones
+      description: Retorna el histórico de telemetría recopilado (humedad, temperatura, viento, radiación).
       operationId: getMedicionesHistoricas
+      tags: [MedicionesHistoricas]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/QueryIdArea'
       responses:
         '200':
-          description: Mediciones históricas obtenidas exitosamente.
+          description: Historial de mediciones obtenido exitosamente
           content:
             application/json:
               schema:
@@ -972,12 +792,12 @@ paths:
                 items:
                   $ref: '#/components/schemas/MedicionHistorica'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     post:
-      tags: [MedicionHistorica]
-      summary: Crear medición histórica
-      description: Almacena una nueva lectura de datos agrometeorológicos.
-      operationId: createMedicionHistorica
+      summary: Crear medición
+      description: Agrega un nuevo punto de datos temporal leído desde los sensores del área.
+      operationId: crearMedicionHistorica
+      tags: [MedicionesHistoricas]
       requestBody:
         required: true
         content:
@@ -986,7 +806,7 @@ paths:
               $ref: '#/components/schemas/MedicionHistoricaInput'
       responses:
         '201':
-          description: Medición registrada exitosamente.
+          description: Medición creada exitosamente
           content:
             application/json:
               schema:
@@ -994,19 +814,18 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
-          $ref: '#/components/responses/ServerError'
-
-  /mediciones-historicas/{id}:
+          $ref: '#/components/responses/InternalError'
+  /mediciones-historicas/{idMedicion}:
     get:
-      tags: [MedicionHistorica]
-      summary: Obtener medición histórica por ID
-      description: Consulta los datos exactos de una medición registrada previamente.
+      summary: Obtener medición por ID
+      description: Obtiene un snapshot de medición específico de un momento exacto en el tiempo.
       operationId: getMedicionHistoricaById
+      tags: [MedicionesHistoricas]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdMedicion'
       responses:
         '200':
-          description: Medición encontrada exitosamente.
+          description: Medición encontrada exitosamente
           content:
             application/json:
               schema:
@@ -1014,14 +833,14 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     put:
-      tags: [MedicionHistorica]
-      summary: Actualizar medición histórica
-      description: Corrige o actualiza los datos de un registro histórico.
-      operationId: updateMedicionHistorica
+      summary: Actualizar medición
+      description: Permite corregir o actualizar un valor atípico o erróneo en el historial.
+      operationId: actualizarMedicionHistorica
+      tags: [MedicionesHistoricas]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdMedicion'
       requestBody:
         required: true
         content:
@@ -1030,7 +849,7 @@ paths:
               $ref: '#/components/schemas/MedicionHistoricaInput'
       responses:
         '200':
-          description: Medición actualizada exitosamente.
+          description: Medición actualizada exitosamente
           content:
             application/json:
               schema:
@@ -1040,544 +859,912 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
+          $ref: '#/components/responses/InternalError'
     delete:
-      tags: [MedicionHistorica]
-      summary: Eliminar medición histórica
-      description: Borra de la base de datos una medición específica.
-      operationId: deleteMedicionHistorica
+      summary: Eliminar medición
+      description: Elimina una lectura histórica de la base de datos.
+      operationId: eliminarMedicionHistorica
+      tags: [MedicionesHistoricas]
       parameters:
-        - $ref: '#/components/parameters/IdParam'
+        - $ref: '#/components/parameters/PathIdMedicion'
       responses:
         '204':
-          description: Medición eliminada exitosamente (Sin contenido de respuesta).
+          description: Medición eliminada exitosamente
         '404':
           $ref: '#/components/responses/NotFound'
         '500':
-          $ref: '#/components/responses/ServerError'
-
+          $ref: '#/components/responses/InternalError'
+  /alertas:
+    get:
+      summary: Obtener alertas
+      description: Lista todas las alertas y notificaciones del sistema generadas por desviaciones agronómicas.
+      operationId: getAlertas
+      tags: [Alertas]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/QueryIdArea'
+        - $ref: '#/components/parameters/QueryIdUsuario'
+      responses:
+        '200':
+          description: Lista de alertas obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alerta'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      summary: Crear alerta
+      description: Genera una nueva alerta para notificar a un usuario sobre un área en estado crítico.
+      operationId: crearAlerta
+      tags: [Alertas]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertaInput'
+      responses:
+        '201':
+          description: Alerta creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alerta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /alertas/{idAlerta}:
+    get:
+      summary: Obtener alerta por ID
+      description: Recupera la información detallada de una alerta, incluyendo su tipo y severidad.
+      operationId: getAlertaById
+      tags: [Alertas]
+      parameters:
+        - $ref: '#/components/parameters/PathIdAlerta'
+      responses:
+        '200':
+          description: Alerta encontrada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alerta'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      summary: Actualizar alerta
+      description: Permite actualizar el estado de una alerta, típicamente para marcarla como 'Leída'.
+      operationId: actualizarAlerta
+      tags: [Alertas]
+      parameters:
+        - $ref: '#/components/parameters/PathIdAlerta'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertaInput'
+      responses:
+        '200':
+          description: Alerta actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alerta'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      summary: Eliminar alerta
+      description: Borra una notificación del historial de alertas de un usuario.
+      operationId: eliminarAlerta
+      tags: [Alertas]
+      parameters:
+        - $ref: '#/components/parameters/PathIdAlerta'
+      responses:
+        '204':
+          description: Alerta eliminada exitosamente
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /registros-auditoria:
+    get:
+      summary: Obtener registros de auditoría
+      description: Obtiene la bitácora de eventos relevantes sobre quién modificó parámetros del sistema.
+      operationId: getRegistrosAuditoria
+      tags: [RegistrosAuditoria]
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+        - $ref: '#/components/parameters/QueryIdUsuario'
+        - $ref: '#/components/parameters/QueryIdArea'
+      responses:
+        '200':
+          description: Registros de auditoría obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RegistroAuditoria'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    post:
+      summary: Crear registro
+      description: Inserta una nueva entrada en el log de auditoría detallando una acción realizada.
+      operationId: crearRegistroAuditoria
+      tags: [RegistrosAuditoria]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistroAuditoriaInput'
+      responses:
+        '201':
+          description: Registro de auditoría creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistroAuditoria'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+  /registros-auditoria/{idRegistro}:
+    get:
+      summary: Obtener registro por ID
+      description: Muestra la información de un solo evento de auditoría específico.
+      operationId: getRegistroAuditoriaById
+      tags: [RegistrosAuditoria]
+      parameters:
+        - $ref: '#/components/parameters/PathIdRegistro'
+      responses:
+        '200':
+          description: Registro encontrado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistroAuditoria'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    put:
+      summary: Actualizar registro
+      description: Modifica el contenido de un registro de auditoría.
+      operationId: actualizarRegistroAuditoria
+      tags: [RegistrosAuditoria]
+      parameters:
+        - $ref: '#/components/parameters/PathIdRegistro'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistroAuditoriaInput'
+      responses:
+        '200':
+          description: Registro actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistroAuditoria'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+    delete:
+      summary: Eliminar registro
+      description: Elimina una entrada del historial de auditoría.
+      operationId: eliminarRegistroAuditoria
+      tags: [RegistrosAuditoria]
+      parameters:
+        - $ref: '#/components/parameters/PathIdRegistro'
+      responses:
+        '204':
+          description: Registro eliminado exitosamente
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 components:
   parameters:
-    IdParam:
-      name: id
-      in: path
-      required: true
-      description: Identificador numérico único del recurso.
+    Limit:
+      name: limit
+      in: query
+      description: Número máximo de registros a retornar
       schema:
         type: integer
-    IdParamString:
-      name: id
+        default: 20
+    Offset:
+      name: offset
+      in: query
+      description: Número de registros a omitir
+      schema:
+        type: integer
+        default: 0
+    QueryIdPredio:
+      name: idPredio
+      in: query
+      description: ID del predio para filtrar
+      schema:
+        type: integer
+    QueryIdUsuario:
+      name: idUsuario
+      in: query
+      description: ID del usuario para filtrar
+      schema:
+        type: integer
+    QueryIdModulo:
+      name: id_Modulo
+      in: query
+      description: ID del módulo para filtrar
+      schema:
+        type: integer
+    QueryIdArea:
+      name: id_Area
+      in: query
+      description: ID del área de riego para filtrar
+      schema:
+        type: integer
+    PathIdUsuario:
+      name: idUsuario
       in: path
       required: true
-      description: Identificador compuesto del recurso (ej. '1-2' para IDs relacionados).
+      description: ID del usuario
       schema:
-        type: string
-
+        type: integer
+    PathIdPredio:
+      name: idPredio
+      in: path
+      required: true
+      description: ID del predio
+      schema:
+        type: integer
+    PathIdModulo:
+      name: idModulo
+      in: path
+      required: true
+      description: ID del módulo de control
+      schema:
+        type: integer
+    PathIdArea:
+      name: idArea
+      in: path
+      required: true
+      description: ID del área de riego
+      schema:
+        type: integer
+    PathIdSensor:
+      name: idSensor
+      in: path
+      required: true
+      description: ID del sensor
+      schema:
+        type: integer
+    PathIdConfiguracion:
+      name: idConfiguracion
+      in: path
+      required: true
+      description: ID de la configuración de cultivo
+      schema:
+        type: integer
+    PathIdMedicion:
+      name: idMedicion
+      in: path
+      required: true
+      description: ID de la medición histórica
+      schema:
+        type: integer
+    PathIdAlerta:
+      name: idAlerta
+      in: path
+      required: true
+      description: ID de la alerta
+      schema:
+        type: integer
+    PathIdRegistro:
+      name: idRegistro
+      in: path
+      required: true
+      description: ID del registro de auditoría
+      schema:
+        type: integer
   responses:
     BadRequest:
-      description: Petición inválida. El cuerpo de la solicitud no cumple con el esquema esperado.
+      description: Solicitud incorrecta o parámetros inválidos
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: No autorizado, credenciales inválidas
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
     NotFound:
-      description: Recurso no encontrado. El ID proporcionado no existe en el sistema.
+      description: El recurso solicitado no fue encontrado
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-    ServerError:
-      description: Error interno del servidor al procesar la solicitud.
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Error interno del servidor
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
-
+            $ref: '#/components/schemas/ErrorResponse'
   schemas:
-    # ------------------ Global Error ------------------
-    Error:
+    ErrorResponse:
       type: object
-      required: [code, message]
       properties:
         code:
-          type: string
-          example: "404"
+          type: integer
+          example: 400
         message:
           type: string
-          example: "Recurso no encontrado"
-
-    # ------------------ Usuario ------------------
-    Usuario:
+          example: "Parámetros de entrada inválidos"
+    UsuarioResponse:
       type: object
       properties:
         IDusuario:
           type: integer
+          example: 1
         Nombre:
           type: string
+          maxLength: 100
+          example: "Admin"
         Apellido:
           type: string
+          maxLength: 100
+          example: "Pérez"
         Email:
           type: string
-        Contraseña:
+          maxLength: 150
+          example: "admin@irrigo.com"
+        Telefono:
           type: string
-        Teléfono:
-          type: string
-      example:
-        IDusuario: 1
-        Nombre: "Juan"
-        Apellido: "Pérez"
-        Email: "juan.perez@email.com"
-        Contraseña: "hashed_password_123"
-        Teléfono: "555-1234"
-
+          maxLength: 20
+          example: "1234567890"
     UsuarioInput:
       type: object
-      required: [Nombre, Email, Contraseña]
+      required: [Nombre, Email, Contrasena]
       properties:
         Nombre:
           type: string
+          maxLength: 100
+          example: "Admin"
         Apellido:
           type: string
+          maxLength: 100
+          example: "Pérez"
         Email:
           type: string
-        Contraseña:
+          maxLength: 150
+          example: "admin@irrigo.com"
+        Contrasena:
           type: string
-        Teléfono:
+          maxLength: 255
+          example: "pass123"
+        Telefono:
           type: string
-      example:
-        Nombre: "Juan"
-        Apellido: "Pérez"
-        Email: "juan.perez@email.com"
-        Contraseña: "hashed_password_123"
-        Teléfono: "555-1234"
-
-    # ------------------ Predio ------------------
+          maxLength: 20
+          example: "1234567890"
+    LoginInput:
+      type: object
+      required: [Email, Contrasena]
+      properties:
+        Email:
+          type: string
+          example: "admin@irrigo.com"
+        Contrasena:
+          type: string
+          example: "pass123"
     Predio:
       type: object
+      required: [NombrePredio]
       properties:
         IDpredio:
           type: integer
+          example: 1
         NombrePredio:
           type: string
-        Ubicación:
+          maxLength: 100
+          example: "Rancho La Esperanza"
+        Ubicacion:
           type: string
-        FechaCreación:
+          maxLength: 255
+          example: "Chihuahua, Chih."
+        Latitud:
+          type: number
+          format: float
+          example: 28.632996
+        Longitud:
+          type: number
+          format: float
+          example: -106.069100
+        FechaCreacion:
           type: string
           format: date-time
-      example:
-        IDpredio: 10
-        NombrePredio: "Finca El Sol"
-        Ubicación: "Valle Central, Sector 4"
-        FechaCreación: "2023-10-01T14:30:00Z"
-
+          example: "2026-04-17T16:32:29Z"
     PredioInput:
       type: object
       required: [NombrePredio]
       properties:
         NombrePredio:
           type: string
-        Ubicación:
+          maxLength: 100
+          example: "Rancho La Esperanza"
+        Ubicacion:
           type: string
-      example:
-        NombrePredio: "Finca El Sol"
-        Ubicación: "Valle Central, Sector 4"
-
-    # ------------------ Usuario_predio ------------------
-    Usuario_predio:
+          maxLength: 255
+          example: "Chihuahua, Chih."
+        Latitud:
+          type: number
+          format: float
+          example: 28.632996
+        Longitud:
+          type: number
+          format: float
+          example: -106.069100
+    UsuarioPredio:
       type: object
+      required: [IDusuario, IDpredio]
       properties:
         IDusuario:
           type: integer
+          example: 1
         IDpredio:
           type: integer
-        Rol:
-          type: string
+          example: 1
+        Admin:
+          type: boolean
+          example: true
         Fecha_Asignacion:
           type: string
           format: date-time
-      example:
-        IDusuario: 1
-        IDpredio: 10
-        Rol: "Administrador"
-        Fecha_Asignacion: "2023-10-05T09:15:00Z"
-
-    Usuario_predioInput:
+          example: "2026-04-17T16:32:29Z"
+    UsuarioPredioInput:
       type: object
-      required: [Rol]
+      required: [IDusuario, IDpredio]
       properties:
         IDusuario:
           type: integer
+          example: 1
         IDpredio:
           type: integer
-        Rol:
-          type: string
-      example:
-        IDusuario: 1
-        IDpredio: 10
-        Rol: "Administrador"
-
-    # ------------------ RegistroAuditoria ------------------
-    RegistroAuditoria:
+          example: 1
+        Admin:
+          type: boolean
+          example: true
+    UsuarioPredioUpdateInput:
       type: object
       properties:
-        IDregistro:
-          type: integer
-        IDusuario:
-          type: integer
-        ID_Area:
-          type: integer
-        Fecha_Modificacion:
-          type: string
-          format: date-time
-        Dato_Modificado:
-          type: string
-      example:
-        IDregistro: 501
-        IDusuario: 1
-        ID_Area: 3
-        Fecha_Modificacion: "2023-11-12T16:45:00Z"
-        Dato_Modificado: "{ \"humedad_min\": 30 }"
-
-    RegistroAuditoriaInput:
-      type: object
-      properties:
-        IDusuario:
-          type: integer
-        ID_Area:
-          type: integer
-        Dato_Modificado:
-          type: string
-      example:
-        IDusuario: 1
-        ID_Area: 3
-        Dato_Modificado: "{ \"humedad_min\": 30 }"
-
-    # ------------------ ModuloControl ------------------
+        Admin:
+          type: boolean
+          example: true
     ModuloControl:
       type: object
       properties:
         ID_Modulo:
           type: integer
+          example: 1
         Nombre:
           type: string
+          maxLength: 100
+          example: "Modulo Principal N1"
         IdentificadorRed:
           type: string
+          maxLength: 100
+          example: "MOD-NET-001"
         Estado:
           type: boolean
+          example: true
         UltimaConexion:
           type: string
           format: date-time
         Ultima_Actualizacion:
           type: string
           format: date-time
-      example:
-        ID_Modulo: 8
-        Nombre: "Nodo Central Bomba"
-        IdentificadorRed: "MAC-00:11:22:33:44"
-        Estado: true
-        UltimaConexion: "2023-11-20T08:00:00Z"
-        Ultima_Actualizacion: "2023-11-20T08:00:00Z"
-
     ModuloControlInput:
       type: object
       properties:
         Nombre:
           type: string
+          maxLength: 100
+          example: "Modulo Principal N1"
         IdentificadorRed:
           type: string
-        UltimaConexion:
-          type: string
-          format: date-time
-        Ultima_Actualizacion:
-          type: string
-          format: date-time
-      example:
-        Nombre: "Nodo Central Bomba"
-        IdentificadorRed: "MAC-00:11:22:33:44"
-        UltimaConexion: "2023-11-20T08:00:00Z"
-        Ultima_Actualizacion: "2023-11-20T08:00:00Z"
-
-    # ------------------ AreaRiego ------------------
+          maxLength: 100
+          example: "MOD-NET-001"
+        Estado:
+          type: boolean
+          example: true
     AreaRiego:
       type: object
+      required: [IDpredio]
       properties:
         ID_Area:
           type: integer
+          example: 1
         IDpredio:
           type: integer
+          example: 1
         ID_Modulo:
           type: integer
+          example: 1
         Nombre:
           type: string
+          maxLength: 100
+          example: "Parcela Norte"
         Num_Hectareas:
           type: number
           format: float
+          example: 3.5
         Estado:
           type: boolean
-      example:
-        ID_Area: 3
-        IDpredio: 10
-        ID_Modulo: 8
-        Nombre: "Sector Norte - Maíz"
-        Num_Hectareas: 15.5
-        Estado: true
-
+          example: true
     AreaRiegoInput:
       type: object
+      required: [IDpredio]
       properties:
         IDpredio:
           type: integer
+          example: 1
         ID_Modulo:
           type: integer
+          example: 1
         Nombre:
           type: string
+          maxLength: 100
+          example: "Parcela Norte"
         Num_Hectareas:
           type: number
           format: float
-      example:
-        IDpredio: 10
-        ID_Modulo: 8
-        Nombre: "Sector Norte - Maíz"
-        Num_Hectareas: 15.5
-
-    # ------------------ Sensor ------------------
+          example: 3.5
+        Estado:
+          type: boolean
+          example: true
     Sensor:
       type: object
       properties:
         IDsensor:
           type: integer
+          example: 1
         ID_Modulo:
           type: integer
+          example: 1
         ID_Area:
           type: integer
+          example: 1
+        Latitud:
+          type: number
+          format: float
+          example: 28.633000
+        Longitud:
+          type: number
+          format: float
+          example: -106.069000
         Bateria:
           type: number
           format: float
-        Señal:
+          example: 95.5
+        Senal:
           type: number
           format: float
-      example:
-        IDsensor: 102
-        ID_Modulo: 8
-        ID_Area: 3
-        Bateria: 85.5
-        Señal: -65.0
-
+          example: -65.0
     SensorInput:
       type: object
       properties:
         ID_Modulo:
           type: integer
+          example: 1
         ID_Area:
           type: integer
+          example: 1
+        Latitud:
+          type: number
+          format: float
+          example: 28.633000
+        Longitud:
+          type: number
+          format: float
+          example: -106.069000
         Bateria:
           type: number
           format: float
-        Señal:
+          example: 95.5
+        Senal:
           type: number
           format: float
-      example:
-        ID_Modulo: 8
-        ID_Area: 3
-        Bateria: 85.5
-        Señal: -65.0
-
-    # ------------------ ConfiguracionCultivo ------------------
+          example: -65.0
     ConfiguracionCultivo:
       type: object
+      required: [ID_Area]
       properties:
         ID_Configuracion:
           type: integer
+          example: 1
         ID_Area:
           type: integer
+          example: 1
         TipoCultivo:
           type: string
+          maxLength: 100
+          example: "Nogal Pecanero"
         TipoTierra:
           type: string
+          maxLength: 100
+          example: "Franco Arcilloso"
         CapacidadCampo:
           type: number
           format: float
+          example: 32.5
         PuntoMarchitez:
           type: number
           format: float
+          example: 15.0
         RangoHumedadMIN:
           type: number
           format: float
+          example: 20.0
         RangoHumedadMAX:
           type: number
           format: float
+          example: 30.0
         LaminaRiego:
           type: number
           format: float
-        DesarrolloVegetativo:
-          type: number
-          format: float
-      example:
-        ID_Configuracion: 1
-        ID_Area: 3
-        TipoCultivo: "Maíz Blanco"
-        TipoTierra: "Franco Arcilloso"
-        CapacidadCampo: 32.0
-        PuntoMarchitez: 15.0
-        RangoHumedadMIN: 20.0
-        RangoHumedadMAX: 28.0
-        LaminaRiego: 12.5
-        DesarrolloVegetativo: 45.0
-
+          example: 12.5
     ConfiguracionCultivoInput:
       type: object
+      required: [ID_Area]
       properties:
         ID_Area:
           type: integer
+          example: 1
         TipoCultivo:
           type: string
+          maxLength: 100
+          example: "Nogal Pecanero"
         TipoTierra:
           type: string
+          maxLength: 100
+          example: "Franco Arcilloso"
         CapacidadCampo:
           type: number
           format: float
+          example: 32.5
         PuntoMarchitez:
           type: number
           format: float
+          example: 15.0
         RangoHumedadMIN:
           type: number
           format: float
+          example: 20.0
         RangoHumedadMAX:
           type: number
           format: float
+          example: 30.0
         LaminaRiego:
           type: number
           format: float
-        DesarrolloVegetativo:
-          type: number
-          format: float
-      example:
-        ID_Area: 3
-        TipoCultivo: "Maíz Blanco"
-        TipoTierra: "Franco Arcilloso"
-        CapacidadCampo: 32.0
-        PuntoMarchitez: 15.0
-        RangoHumedadMIN: 20.0
-        RangoHumedadMAX: 28.0
-        LaminaRiego: 12.5
-        DesarrolloVegetativo: 45.0
-
-    # ------------------ Alerta ------------------
-    Alerta:
-      type: object
-      properties:
-        ID_Alerta:
-          type: integer
-        ID_area:
-          type: integer
-        IDusuario:
-          type: integer
-        Fecha:
-          type: string
-          format: date-time
-        Tipo:
-          type: string
-        Severidad:
-          type: string
-        Estado:
-          type: boolean
-        Leida:
-          type: boolean
-      example:
-        ID_Alerta: 405
-        ID_area: 3
-        IDusuario: 1
-        Fecha: "2023-11-20T10:05:00Z"
-        Tipo: "Humedad Baja"
-        Severidad: "Alta"
-        Estado: false
-        Leida: false
-
-    AlertaInput:
-      type: object
-      properties:
-        ID_area:
-          type: integer
-        IDusuario:
-          type: integer
-        Tipo:
-          type: string
-        Severidad:
-          type: string
-      example:
-        ID_area: 3
-        IDusuario: 1
-        Tipo: "Humedad Baja"
-        Severidad: "Alta"
-
-    # ------------------ MedicionHistorica ------------------
+          example: 12.5
     MedicionHistorica:
       type: object
+      required: [ID_Area]
       properties:
         ID_Medicion:
           type: integer
+          example: 1
         ID_Area:
           type: integer
+          example: 1
         Fecha:
           type: string
           format: date-time
+          example: "2026-04-17T16:32:29Z"
         Temperatura_Suelo:
           type: number
           format: float
+          example: 22.5
         Humedad_suelo:
           type: number
           format: float
+          example: 18.2
         Evapotranspiracion:
           type: number
           format: float
+          example: 5.4
         Conductividad_suelo:
           type: number
           format: float
+          example: 1.2
         consumo_agua:
           type: number
           format: float
+          example: 1500.0
         Desarrollo_vegetativa:
           type: number
           format: float
-      example:
-        ID_Medicion: 9942
-        ID_Area: 3
-        Fecha: "2023-11-20T12:00:00Z"
-        Temperatura_Suelo: 22.5
-        Humedad_suelo: 18.2
-        Evapotranspiracion: 4.5
-        Conductividad_suelo: 1.2
-        consumo_agua: 1500.0
-        Desarrollo_vegetativa: 46.0
-
+          example: 0.8
+        Potencial_Hidrico:
+          type: number
+          format: float
+          example: -0.5
+        Temp_Ambiental:
+          type: integer
+          example: 28
+        Humedad_Relativa:
+          type: number
+          format: float
+          example: 45.0
+        Velocidad_Viento:
+          type: number
+          format: float
+          example: 12.5
+        Radiacion_Sol:
+          type: number
+          format: float
+          example: 850.0
+        Consumo_Diario_Prom:
+          type: number
+          format: float
+          example: 1450.0
+        Consumo_Acum:
+          type: number
+          format: float
+          example: 45000.0
     MedicionHistoricaInput:
       type: object
+      required: [ID_Area]
       properties:
         ID_Area:
           type: integer
+          example: 1
         Temperatura_Suelo:
           type: number
           format: float
+          example: 22.5
         Humedad_suelo:
           type: number
           format: float
+          example: 18.2
         Evapotranspiracion:
           type: number
           format: float
+          example: 5.4
         Conductividad_suelo:
           type: number
           format: float
+          example: 1.2
         consumo_agua:
           type: number
           format: float
+          example: 1500.0
         Desarrollo_vegetativa:
           type: number
           format: float
-      example:
-        ID_Area: 3
-        Temperatura_Suelo: 22.5
-        Humedad_suelo: 18.2
-        Evapotranspiracion: 4.5
-        Conductividad_suelo: 1.2
-        consumo_agua: 1500.0
-        Desarrollo_vegetativa: 46.0
+          example: 0.8
+        Potencial_Hidrico:
+          type: number
+          format: float
+          example: -0.5
+        Temp_Ambiental:
+          type: integer
+          example: 28
+        Humedad_Relativa:
+          type: number
+          format: float
+          example: 45.0
+        Velocidad_Viento:
+          type: number
+          format: float
+          example: 12.5
+        Radiacion_Sol:
+          type: number
+          format: float
+          example: 850.0
+        Consumo_Diario_Prom:
+          type: number
+          format: float
+          example: 1450.0
+        Consumo_Acum:
+          type: number
+          format: float
+          example: 45000.0
+    Alerta:
+      type: object
+      required: [ID_area]
+      properties:
+        ID_Alerta:
+          type: integer
+          example: 1
+        ID_area:
+          type: integer
+          example: 1
+        IDusuario:
+          type: integer
+          example: 1
+        Fecha:
+          type: string
+          format: date-time
+          example: "2026-04-17T16:32:29Z"
+        Tipo:
+          type: string
+          maxLength: 100
+          example: "Humedad Baja"
+        Severidad:
+          type: string
+          maxLength: 50
+          example: "ALTA"
+        Leida:
+          type: boolean
+          example: false
+    AlertaInput:
+      type: object
+      required: [ID_area]
+      properties:
+        ID_area:
+          type: integer
+          example: 1
+        IDusuario:
+          type: integer
+          example: 1
+        Tipo:
+          type: string
+          maxLength: 100
+          example: "Humedad Baja"
+        Severidad:
+          type: string
+          maxLength: 50
+          example: "ALTA"
+        Leida:
+          type: boolean
+          example: false
+    RegistroAuditoria:
+      type: object
+      properties:
+        IDregistro:
+          type: integer
+          example: 1
+        IDusuario:
+          type: integer
+          example: 1
+        ID_Area:
+          type: integer
+          example: 1
+        Fecha_Modificacion:
+          type: string
+          format: date-time
+          example: "2026-04-17T16:32:29Z"
+        Dato_Modificado:
+          type: string
+          example: "Cambio en el rango de humedad mínimo de 15 a 20"
+    RegistroAuditoriaInput:
+      type: object
+      properties:
+        IDusuario:
+          type: integer
+          example: 1
+        ID_Area:
+          type: integer
+          example: 1
+        Dato_Modificado:
+          type: string
+          example: "Cambio en el rango de humedad mínimo de 15 a 20"
