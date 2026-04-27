@@ -88,7 +88,7 @@ Las contraseñas están hasheadas con `werkzeug.security` (no texto plano). Usa 
 
 | Rol | Email | Contraseña |
 |---|---|---|
-| **Administrador** | `admin@irrigo.com` | `admin123` |
+| **Administrador** | `admin@irrigo.com` | `Admin123!` |
 | **Lector** | `jazmin@example.com` | `jazmin123` |
 
 > **¿Quieres generar nuevos hashes?** Ejecuta `python hash_passwords.py` y copia los hashes al archivo `IrriGo.sql`.

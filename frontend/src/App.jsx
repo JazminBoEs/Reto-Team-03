@@ -37,26 +37,19 @@ function App() {
   // Conteo de alertas no leídas
   const [alertasNoLeidas, setAlertasNoLeidas] = useState(0);
 
-  // Restaurar sesión desde localStorage al recargar
+  // Política de desarrollo: siempre pedir credenciales al iniciar la app.
+  // Evita errores por tokens viejos/inválidos entre reinicios del backend.
   useEffect(() => {
-    const token = localStorage.getItem('irrigo_token');
-    const usuarioStr = localStorage.getItem('irrigo_usuario');
-    const onboardingPendiente = localStorage.getItem('irrigo_requiere_onboarding') === '1';
-    const predioGuardado = localStorage.getItem('irrigo_predio_actual');
-    if (token && usuarioStr) {
-      try {
-        const usuario = JSON.parse(usuarioStr);
-        setUsuarioActual(usuario);
-        setEstaAutenticado(true);
-        setRequiereOnboarding(onboardingPendiente);
-        setPredioActualId(predioGuardado ? Number(predioGuardado) : (usuario.predios?.[0]?.predio ?? null));
-      } catch {
-        localStorage.removeItem('irrigo_token');
-        localStorage.removeItem('irrigo_usuario');
-        localStorage.removeItem('irrigo_requiere_onboarding');
-        localStorage.removeItem('irrigo_predio_actual');
-      }
-    }
+    localStorage.removeItem('irrigo_token');
+    localStorage.removeItem('irrigo_usuario');
+    localStorage.removeItem('irrigo_requiere_onboarding');
+    localStorage.removeItem('irrigo_predio_actual');
+    setEstaAutenticado(false);
+    setUsuarioActual(null);
+    setRequiereOnboarding(false);
+    setRequiereCambioPassword(false);
+    setPredioActualId(null);
+
     // Restaurar preferencia de daltonismo
     const colorMode = localStorage.getItem('irrigo_color_mode');
     document.body.classList.remove('daltonismo-deutan', 'daltonismo-protan');

@@ -14,6 +14,7 @@ from flask_cors import CORS
 import mysql.connector
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask.json.provider import DefaultJSONProvider
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 try:
     import jwt as pyjwt  # type: ignore  # pip install pyjwt  (pyjwt 2.x instala el módulo 'jwt')
     _JWT_AVAILABLE = True
@@ -46,6 +47,8 @@ app.json = CustomJSONProvider(app)
 # JWT y Seguridad
 # -------------------------------------------------------------------
 JWT_SECRET = os.environ.get('JWT_SECRET_KEY', 'irrigo-dev-secret-change-in-prod')
+TOKEN_TTL_SECONDS = 24 * 60 * 60
+_token_serializer = URLSafeTimedSerializer(JWT_SECRET, salt='irrigo-auth')
 PASSWORD_REGEX = re.compile(
     r'^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};:\'",.<>?/\\|`~]).{8,}$'
 )
@@ -70,40 +73,45 @@ def generar_codigo_acceso():
     raise RuntimeError("No se pudo generar un código único")
 
 def generar_token(user_id, email, roles):
-    """Genera JWT de sesión con expiración de 24 horas"""
-    if not _JWT_AVAILABLE:
-        return None
+    """Genera token de sesión con expiración de 24 horas."""
     payload = {
         "sub": str(user_id),
         "email": email,
         "roles": roles,
-        "iat": datetime.utcnow(),
-        "exp": datetime.utcnow() + timedelta(hours=24)
+        "iat": datetime.utcnow().timestamp(),
     }
-    return pyjwt.encode(payload, JWT_SECRET, algorithm="HS256")
+    if _JWT_AVAILABLE:
+        jwt_payload = {
+            **payload,
+            "iat": datetime.utcnow(),
+            "exp": datetime.utcnow() + timedelta(hours=24),
+        }
+        return pyjwt.encode(jwt_payload, JWT_SECRET, algorithm="HS256")
+    return _token_serializer.dumps(payload)
 
 def jwt_required(f):
     """Decorador que valida JWT y adjunta payload a g.usuario_actual"""
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not _JWT_AVAILABLE:
-            return jsonify({"code": 500, "message": "JWT no disponible, instala pyjwt"}), 500
         auth = request.headers.get('Authorization', '')
         token = auth.replace('Bearer ', '').strip()
         if not token:
             return jsonify({"code": 401, "message": "Token de autenticación requerido"}), 401
         try:
-            # Compatibilidad: aceptar tokens antiguos con claim `sub` numérico.
-            payload = pyjwt.decode(
-                token,
-                JWT_SECRET,
-                algorithms=["HS256"],
-                options={"verify_sub": False}
-            )
+            if _JWT_AVAILABLE:
+                # Compatibilidad: aceptar tokens antiguos con claim `sub` numérico.
+                payload = pyjwt.decode(
+                    token,
+                    JWT_SECRET,
+                    algorithms=["HS256"],
+                    options={"verify_sub": False}
+                )
+            else:
+                payload = _token_serializer.loads(token, max_age=TOKEN_TTL_SECONDS)
             g.usuario_actual = payload
-        except pyjwt.ExpiredSignatureError:
+        except (pyjwt.ExpiredSignatureError if _JWT_AVAILABLE else SignatureExpired):
             return jsonify({"code": 401, "message": "Token expirado, inicia sesión de nuevo"}), 401
-        except pyjwt.InvalidTokenError:
+        except (pyjwt.InvalidTokenError if _JWT_AVAILABLE else BadSignature):
             return jsonify({"code": 401, "message": "Token inválido"}), 401
         return f(*args, **kwargs)
     return decorated
@@ -1417,6 +1425,54 @@ def start_periodic_medicion_scheduler(interval_seconds=600):
     thread.start()
 
 
+def _env_flag(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return str(value).strip().lower() in ('1', 'true', 'yes', 'on')
+
+
+def bootstrap_dev_admin_credentials():
+    """
+    En desarrollo, asegura que la cuenta admin de seed pueda iniciar sesión
+    con credenciales conocidas, siempre almacenando hash.
+    """
+    admin_email = os.environ.get('IRRIGO_ADMIN_EMAIL', 'admin@irrigo.com').strip().lower()
+    admin_password = os.environ.get('IRRIGO_ADMIN_PASSWORD', 'Admin123!')
+
+    if not admin_email or not admin_password:
+        logging.warning('Bootstrap admin omitido: IRRIGO_ADMIN_EMAIL/IRRIGO_ADMIN_PASSWORD inválidos.')
+        return
+
+    admin_user = execute_query(
+        "SELECT IDusuario, Contrasena FROM Usuario WHERE LOWER(Email) = %s",
+        (admin_email,),
+        fetch=True,
+        fetchone=True,
+    )
+
+    if not admin_user:
+        logging.warning('Bootstrap admin: no existe usuario con email %s', admin_email)
+        return
+
+    if check_password_hash(admin_user['Contrasena'], admin_password):
+        logging.info('Bootstrap admin: credenciales ya sincronizadas para %s', admin_email)
+        return
+
+    execute_query(
+        """
+        UPDATE Usuario
+        SET Contrasena = %s,
+            FechaUltimoCambioPassword = CURRENT_TIMESTAMP,
+            RequiereCambioPassword = FALSE
+        WHERE IDusuario = %s
+        """,
+        (generate_password_hash(admin_password), admin_user['IDusuario']),
+        commit=True,
+    )
+    logging.info('Bootstrap admin: contraseña actualizada para %s', admin_email)
+
+
 @app.route('/api/v1/clima/sincronizar/<int:idArea>', methods=['POST'])
 @jwt_required
 def sincronizar_clima(idArea):
@@ -1498,6 +1554,8 @@ if __name__ == '__main__':
     # Entorno de desarrollo. En producción, utilizar Gunicorn o uWSGI
     if not app.debug or os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
         logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+        if _env_flag('IRRIGO_BOOTSTRAP_ADMIN_ON_START', default=True):
+            bootstrap_dev_admin_credentials()
         start_periodic_medicion_scheduler()
 
     app.run(host='0.0.0.0', port=3000, debug=True)
