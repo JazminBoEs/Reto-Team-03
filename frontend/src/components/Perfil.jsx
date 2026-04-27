@@ -148,8 +148,63 @@ const Perfil = ({
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 flex flex-col gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+        <div className="lg:col-span-2 order-1 lg:order-1 flex flex-col gap-6 md:gap-8">
+          <div className="bg-earth-panel border border-white/5 p-4 md:p-8 rounded-3xl md:rounded-4xl shadow-2xl">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6 md:mb-8 border-b border-white/5 pb-4">
+              <h3 className="text-xl font-bold text-white flex items-center gap-3"><UserIcon className="w-6 h-6 text-creamy-blue" /> Informacion personal</h3>
+              <button onClick={() => (editando ? guardarCambios() : setEditando(true))} className={`px-6 py-2 rounded-xl font-bold text-sm ${editando ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-transparent border border-white/20 text-gray-300 hover:bg-white/10'}`}>
+                {editando ? 'Guardar cambios' : 'Editar perfil'}
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <div><label className="block text-sm font-medium text-gray-400 mb-2">Nombre</label><input type="text" name="Nombre" value={formData.Nombre} onChange={handleChange} disabled={!editando} className="bg-black/30 border border-white/10 text-white rounded-xl w-full p-3.5 disabled:opacity-50" /></div>
+              <div><label className="block text-sm font-medium text-gray-400 mb-2">Apellidos</label><input type="text" name="Apellido" value={formData.Apellido} onChange={handleChange} disabled={!editando} className="bg-black/30 border border-white/10 text-white rounded-xl w-full p-3.5 disabled:opacity-50" /></div>
+              <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-400 mb-2">Correo electronico</label><div className="relative"><EnvelopeIcon className="absolute left-4 top-3.5 h-5 w-5 text-gray-500" /><input type="email" name="Email" value={formData.Email} onChange={handleChange} disabled={!editando} className="bg-black/30 border border-white/10 text-white rounded-xl w-full pl-12 p-3.5 disabled:opacity-50" /></div></div>
+              <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-400 mb-2">Telefono</label><div className="relative"><PhoneIcon className="absolute left-4 top-3.5 h-5 w-5 text-gray-500" /><input type="tel" name="Telefono" value={formData.Telefono} onChange={handleChange} disabled={!editando} className="bg-black/30 border border-white/10 text-white rounded-xl w-full pl-12 p-3.5 disabled:opacity-50" /></div></div>
+            </div>
+          </div>
+
+          <div className="bg-earth-panel border border-white/5 p-4 md:p-8 rounded-3xl md:rounded-4xl shadow-2xl">
+            <h3 className="text-xl font-bold text-white mb-4">Mis predios (Administrador)</h3>
+            <div className="grid md:grid-cols-2 gap-4 mb-8">
+              {misPredios.length === 0 && <p className="text-sm text-gray-500">No administras predios todavia.</p>}
+              {misPredios.map((p) => (
+                <button
+                  key={p.predio}
+                  onClick={() => onSeleccionarPredio?.(p.predio)}
+                  className={`text-left bg-black/20 border rounded-2xl p-4 transition-all ${predioActual?.predio === p.predio ? 'border-emerald-500/50' : 'border-white/10 hover:border-emerald-500/30'}`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-white font-bold">{p.nombrePredio}</span>
+                    <span className="text-[10px] px-2 py-1 rounded-full border bg-emerald-500/15 border-emerald-500/30 text-emerald-400 font-bold uppercase">Admin</span>
+                  </div>
+                  <p className="text-xs text-gray-400">{p.codigoAcceso ? `Codigo: ${p.codigoAcceso}` : 'Sin codigo'}</p>
+                </button>
+              ))}
+            </div>
+
+            <h3 className="text-xl font-bold text-white mb-4">Predios compartidos (Solo lectura)</h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              {prediosCompartidos.length === 0 && <p className="text-sm text-gray-500">No tienes accesos compartidos.</p>}
+              {prediosCompartidos.map((p) => (
+                <button
+                  key={p.predio}
+                  onClick={() => onSeleccionarPredio?.(p.predio)}
+                  className={`text-left bg-black/20 border rounded-2xl p-4 transition-all ${predioActual?.predio === p.predio ? 'border-blue-400/50' : 'border-white/10 hover:border-blue-400/30'}`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-white font-bold">{p.nombrePredio}</span>
+                    <span className="text-[10px] px-2 py-1 rounded-full border bg-blue-500/15 border-blue-500/30 text-blue-300 font-bold uppercase">Lector</span>
+                  </div>
+                  <p className="text-xs text-gray-400">{p.alcance === 'uno' ? 'Acceso parcial' : 'Acceso total de lectura'}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-1 order-2 lg:order-2 flex flex-col gap-4 md:gap-6">
           <div className="bg-earth-panel border border-white/5 p-8 rounded-4xl shadow-2xl text-center">
             <div className="w-24 h-24 bg-linear-to-br from-creamy-blue to-emerald-600 rounded-full flex items-center justify-center shadow-lg mb-5 border-4 border-[#0f2922] mx-auto">
               <span className="text-4xl font-black text-white tracking-tighter">{formData.Nombre.charAt(0)}{formData.Apellido?.charAt(0) || ''}</span>
@@ -184,61 +239,6 @@ const Perfil = ({
                       <div key={i} className="w-6 h-6 rounded-full border border-white/10" style={{ backgroundColor: color }} />
                     ))}
                   </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="lg:col-span-2 flex flex-col gap-8">
-          <div className="bg-earth-panel border border-white/5 p-8 rounded-4xl shadow-2xl">
-            <div className="flex justify-between items-center mb-8 border-b border-white/5 pb-4">
-              <h3 className="text-xl font-bold text-white flex items-center gap-3"><UserIcon className="w-6 h-6 text-creamy-blue" /> Informacion personal</h3>
-              <button onClick={() => (editando ? guardarCambios() : setEditando(true))} className={`px-6 py-2 rounded-xl font-bold text-sm ${editando ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-transparent border border-white/20 text-gray-300 hover:bg-white/10'}`}>
-                {editando ? 'Guardar cambios' : 'Editar perfil'}
-              </button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div><label className="block text-sm font-medium text-gray-400 mb-2">Nombre</label><input type="text" name="Nombre" value={formData.Nombre} onChange={handleChange} disabled={!editando} className="bg-black/30 border border-white/10 text-white rounded-xl w-full p-3.5 disabled:opacity-50" /></div>
-              <div><label className="block text-sm font-medium text-gray-400 mb-2">Apellidos</label><input type="text" name="Apellido" value={formData.Apellido} onChange={handleChange} disabled={!editando} className="bg-black/30 border border-white/10 text-white rounded-xl w-full p-3.5 disabled:opacity-50" /></div>
-              <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-400 mb-2">Correo electronico</label><div className="relative"><EnvelopeIcon className="absolute left-4 top-3.5 h-5 w-5 text-gray-500" /><input type="email" name="Email" value={formData.Email} onChange={handleChange} disabled={!editando} className="bg-black/30 border border-white/10 text-white rounded-xl w-full pl-12 p-3.5 disabled:opacity-50" /></div></div>
-              <div className="md:col-span-2"><label className="block text-sm font-medium text-gray-400 mb-2">Telefono</label><div className="relative"><PhoneIcon className="absolute left-4 top-3.5 h-5 w-5 text-gray-500" /><input type="tel" name="Telefono" value={formData.Telefono} onChange={handleChange} disabled={!editando} className="bg-black/30 border border-white/10 text-white rounded-xl w-full pl-12 p-3.5 disabled:opacity-50" /></div></div>
-            </div>
-          </div>
-
-          <div className="bg-earth-panel border border-white/5 p-8 rounded-4xl shadow-2xl">
-            <h3 className="text-xl font-bold text-white mb-4">Mis predios (Administrador)</h3>
-            <div className="grid md:grid-cols-2 gap-4 mb-8">
-              {misPredios.length === 0 && <p className="text-sm text-gray-500">No administras predios todavia.</p>}
-              {misPredios.map((p) => (
-                <button
-                  key={p.predio}
-                  onClick={() => onSeleccionarPredio?.(p.predio)}
-                  className={`text-left bg-black/20 border rounded-2xl p-4 transition-all ${predioActual?.predio === p.predio ? 'border-emerald-500/50' : 'border-white/10 hover:border-emerald-500/30'}`}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-white font-bold">{p.nombrePredio}</span>
-                    <span className="text-[10px] px-2 py-1 rounded-full border bg-emerald-500/15 border-emerald-500/30 text-emerald-400 font-bold uppercase">Admin</span>
-                  </div>
-                  <p className="text-xs text-gray-400">{p.codigoAcceso ? `Codigo: ${p.codigoAcceso}` : 'Sin codigo'}</p>
-                </button>
-              ))}
-            </div>
-
-            <h3 className="text-xl font-bold text-white mb-4">Predios compartidos (Solo lectura)</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              {prediosCompartidos.length === 0 && <p className="text-sm text-gray-500">No tienes accesos compartidos.</p>}
-              {prediosCompartidos.map((p) => (
-                <button
-                  key={p.predio}
-                  onClick={() => onSeleccionarPredio?.(p.predio)}
-                  className={`text-left bg-black/20 border rounded-2xl p-4 transition-all ${predioActual?.predio === p.predio ? 'border-blue-400/50' : 'border-white/10 hover:border-blue-400/30'}`}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-white font-bold">{p.nombrePredio}</span>
-                    <span className="text-[10px] px-2 py-1 rounded-full border bg-blue-500/15 border-blue-500/30 text-blue-300 font-bold uppercase">Lector</span>
-                  </div>
-                  <p className="text-xs text-gray-400">{p.alcance === 'uno' ? 'Acceso parcial' : 'Acceso total de lectura'}</p>
                 </button>
               ))}
             </div>

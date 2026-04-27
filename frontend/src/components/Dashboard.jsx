@@ -90,12 +90,12 @@ const Dashboard = ({ setVistaActual, esAdmin, areaPermitida, predioActualId }) =
 
   return (
     <div className="animate-fade-in">
-      <header className="mb-10">
-        <h1 className="text-4xl font-serif font-bold text-white mb-2">Monitor de Cultivo</h1>
-        <div className="flex items-center gap-2">
+      <header className="mb-8 md:mb-10">
+        <h1 className="text-3xl md:text-4xl font-serif font-bold text-white mb-2">Monitor de Cultivo</h1>
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-creamy-blue/80 font-medium">Panel Principal IrriGo</span>
           <span className="text-gray-600">•</span>
-          <span className="text-gray-400 text-sm flex items-center gap-2">
+          <span className="text-gray-400 text-sm flex items-center gap-2 min-w-0">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -185,10 +185,10 @@ const Dashboard = ({ setVistaActual, esAdmin, areaPermitida, predioActualId }) =
       </div>
 
       {/* RESUMEN CLIMÁTICO — datos de la BD (sincronizados desde Open-Meteo) */}
-      <div className="bg-earth-panel p-8 rounded-[2.5rem] border border-white/5 shadow-2xl mb-10">
-        <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-8">
+      <div className="bg-earth-panel p-5 sm:p-7 md:p-8 rounded-[2rem] md:rounded-[2.5rem] border border-white/5 shadow-2xl mb-10">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-white/5 pb-4 mb-8">
           <h3 className="text-xl font-serif font-bold text-white">Resumen Climático Local</h3>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             {climaCargando && (
               <span className="text-xs text-gray-500 animate-pulse">Sincronizando clima...</span>
             )}
@@ -218,7 +218,7 @@ const Dashboard = ({ setVistaActual, esAdmin, areaPermitida, predioActualId }) =
             No se pudo obtener el clima. Verifica la conexión del servidor.
           </p>
         ) : clima ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
 
             {/* Temperatura */}
             <div className="flex items-center gap-4">
@@ -233,7 +233,7 @@ const Dashboard = ({ setVistaActual, esAdmin, areaPermitida, predioActualId }) =
             </div>
 
             {/* Viento */}
-            <div className="flex items-center gap-4 border-l border-white/5 pl-8">
+            <div className="flex items-center gap-4 md:border-l md:border-white/5 md:pl-8">
               <div className="p-4 bg-creamy-blue/10 rounded-2xl text-creamy-blue">
                 <CloudIcon className="w-8 h-8" />
               </div>
@@ -246,7 +246,7 @@ const Dashboard = ({ setVistaActual, esAdmin, areaPermitida, predioActualId }) =
             </div>
 
             {/* Radiación + ET₀ */}
-            <div className="flex items-center gap-4 border-l border-white/5 pl-8">
+            <div className="flex items-center gap-4 md:border-l md:border-white/5 md:pl-8">
               <div className="p-4 bg-yellow-500/10 rounded-2xl text-yellow-500">
                 <SunIcon className="w-8 h-8" />
               </div>
@@ -264,10 +264,10 @@ const Dashboard = ({ setVistaActual, esAdmin, areaPermitida, predioActualId }) =
       </div>
 
       {/* BOTONES DE NAVEGACIÓN RÁPIDA */}
-      <div className="flex gap-6">
+      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
         <button
           onClick={() => setVistaActual('areas')}
-          className="flex-1 bg-creamy-blue hover:bg-white text-earth-dark font-bold py-5 rounded-2xl flex items-center justify-center gap-3 transition-colors shadow-lg cursor-pointer"
+          className="w-full sm:flex-1 bg-creamy-blue hover:bg-white text-earth-dark font-bold py-4 sm:py-5 rounded-2xl flex items-center justify-center gap-3 transition-colors shadow-lg cursor-pointer"
         >
           <MapIcon className="w-6 h-6" />
           Ir a Áreas de Riego
@@ -275,7 +275,7 @@ const Dashboard = ({ setVistaActual, esAdmin, areaPermitida, predioActualId }) =
         </button>
         <button
           onClick={() => setVistaActual('reportes')}
-          className="flex-1 bg-earth-panel hover:bg-white/5 border border-white/10 text-white font-bold py-5 rounded-2xl flex items-center justify-center gap-3 transition-colors shadow-lg cursor-pointer"
+          className="w-full sm:flex-1 bg-earth-panel hover:bg-white/5 border border-white/10 text-white font-bold py-4 sm:py-5 rounded-2xl flex items-center justify-center gap-3 transition-colors shadow-lg cursor-pointer"
         >
           <ChartBarIcon className="w-6 h-6 text-creamy-blue" />
           Ver Reportes Completos

@@ -149,7 +149,7 @@ const Parametros = ({ setVistaActual, usuarioActual, predioActualId }) => {
         <div onClick={() => setVistaActual('dashboard')} className="flex items-center gap-2 text-creamy-blue hover:text-white cursor-pointer w-fit mb-4 transition-colors">
           <ArrowLeftIcon className="w-4 h-4" /> <span className="text-sm font-bold">Volver al Dashboard</span>
         </div>
-        <h2 className="text-4xl font-serif font-bold text-white mb-1">Parámetros del Sistema</h2>
+        <h2 className="text-3xl md:text-4xl font-serif font-bold text-white mb-1">Parámetros del Sistema</h2>
         <p className="text-gray-400">Gestión de predios, áreas de riego y configuraciones de cultivo</p>
       </header>
 
@@ -161,12 +161,14 @@ const Parametros = ({ setVistaActual, usuarioActual, predioActualId }) => {
       )}
 
       {/* TABS */}
-      <div className="flex gap-2 mb-8">
-        {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all cursor-pointer ${tab === t.id ? 'bg-creamy-blue/10 text-creamy-blue border border-creamy-blue/20' : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-transparent'}`}>
-            <t.icon className="w-5 h-5" /> {t.label} <span className="ml-1 text-xs opacity-60">({t.count})</span>
-          </button>
-        ))}
+      <div className="mb-8 overflow-x-auto">
+        <div className="flex gap-2 min-w-max pr-2">
+          {tabs.map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} className={`flex items-center gap-2 px-4 md:px-5 py-3 rounded-xl font-bold text-sm transition-all cursor-pointer whitespace-nowrap ${tab === t.id ? 'bg-creamy-blue/10 text-creamy-blue border border-creamy-blue/20' : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-transparent'}`}>
+              <t.icon className="w-5 h-5" /> {t.label} <span className="ml-1 text-xs opacity-60">({t.count})</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* CONTENIDO POR TAB */}
@@ -343,8 +345,8 @@ const ModalFormulario = ({ modal, setModal, predios, areas, onGuardarPredio, onG
   const titulo = modal.modo === 'crear' ? 'Crear' : 'Editar';
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setModal(null)}>
-      <div className="bg-earth-panel border border-white/10 rounded-4xl p-8 w-full max-w-lg shadow-2xl animate-fade-in" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-start sm:items-center justify-center p-3 md:p-4 overflow-y-auto" onClick={() => setModal(null)}>
+      <div className="bg-earth-panel border border-white/10 rounded-3xl md:rounded-4xl p-4 md:p-6 lg:p-8 w-full max-w-sm sm:max-w-md lg:max-w-lg shadow-2xl animate-fade-in max-h-[92vh] overflow-y-auto my-4" onClick={e => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-bold text-white">{titulo} {modal.tipo === 'predio' ? 'Predio' : modal.tipo === 'area' ? 'Área de Riego' : 'Configuración'}</h3>
           <button onClick={() => setModal(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-gray-400 cursor-pointer"><XMarkIcon className="w-5 h-5" /></button>
@@ -353,7 +355,7 @@ const ModalFormulario = ({ modal, setModal, predios, areas, onGuardarPredio, onG
           {modal.tipo === 'predio' && (<>
             <Field label="Nombre" name="NombrePredio" value={form.NombrePredio} onChange={handleChange} required />
             <Field label="Ubicación" name="Ubicacion" value={form.Ubicacion} onChange={handleChange} />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
               <Field label="Latitud" name="Latitud" type="number" step="any" value={form.Latitud} onChange={handleChange} />
               <Field label="Longitud" name="Longitud" type="number" step="any" value={form.Longitud} onChange={handleChange} />
             </div>
@@ -365,15 +367,15 @@ const ModalFormulario = ({ modal, setModal, predios, areas, onGuardarPredio, onG
           </>)}
           {modal.tipo === 'config' && (<>
             <div><label className="block text-sm text-gray-400 mb-1.5">Área de Riego</label><select name="ID_Area" value={form.ID_Area} onChange={handleChange} required className="bg-black/30 border border-white/10 text-white rounded-xl w-full p-3 text-sm">{areas.map(a => <option key={a.ID_Area} value={a.ID_Area}>{a.Nombre || `Área ${a.ID_Area}`}</option>)}</select></div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
               <Field label="Tipo Cultivo" name="TipoCultivo" value={form.TipoCultivo} onChange={handleChange} />
               <Field label="Tipo Tierra" name="TipoTierra" value={form.TipoTierra} onChange={handleChange} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
               <Field label="Cap. Campo" name="CapacidadCampo" type="number" step="0.1" value={form.CapacidadCampo} onChange={handleChange} />
               <Field label="Pto. Marchitez" name="PuntoMarchitez" type="number" step="0.1" value={form.PuntoMarchitez} onChange={handleChange} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
               <Field label="Humedad Mín" name="RangoHumedadMIN" type="number" step="0.1" value={form.RangoHumedadMIN} onChange={handleChange} />
               <Field label="Humedad Máx" name="RangoHumedadMAX" type="number" step="0.1" value={form.RangoHumedadMAX} onChange={handleChange} />
             </div>

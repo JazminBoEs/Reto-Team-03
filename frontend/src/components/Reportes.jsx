@@ -145,21 +145,21 @@ const Reportes = ({ setVistaActual, predioActualId }) => {
         <div onClick={() => setVistaActual('dashboard')} className="flex items-center gap-2 text-creamy-blue hover:text-white cursor-pointer w-fit mb-4">
           <ArrowLeftIcon className="w-4 h-4" /> <span className="text-sm font-bold">Volver al Dashboard</span>
         </div>
-        <h2 className="text-4xl font-serif font-bold text-white mb-1">Reportes y Análisis</h2>
+        <h2 className="text-3xl md:text-4xl font-serif font-bold text-white mb-1">Reportes y Análisis</h2>
         <p className="text-gray-400">Visualización y exportación de datos históricos</p>
       </header>
 
       {/* FILTROS */}
-      <div className="bg-earth-panel p-8 rounded-4xl border border-white/5 shadow-2xl mb-6">
+      <div className="bg-earth-panel p-4 md:p-8 rounded-3xl md:rounded-4xl border border-white/5 shadow-2xl mb-6">
         <div className="flex items-center gap-3 text-white font-bold text-lg mb-6"><FunnelIcon className="w-6 h-6 text-creamy-blue" /> Filtros</div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
           <div><label className="block text-sm font-medium text-gray-400 mb-2">Fecha Inicio</label><div className="relative"><CalendarIcon className="absolute left-4 top-3.5 h-5 w-5 text-gray-500 pointer-events-none" /><input type="date" value={fechaInicio} onChange={(e) => setFechaInicio(e.target.value)} className="bg-black/30 border border-white/10 text-white rounded-xl w-full pl-12 p-3.5 focus:border-creamy-blue transition-all" /></div></div>
           <div><label className="block text-sm font-medium text-gray-400 mb-2">Fecha Fin</label><div className="relative"><CalendarIcon className="absolute left-4 top-3.5 h-5 w-5 text-gray-500 pointer-events-none" /><input type="date" value={fechaFin} onChange={(e) => setFechaFin(e.target.value)} className="bg-black/30 border border-white/10 text-white rounded-xl w-full pl-12 p-3.5 focus:border-creamy-blue transition-all" /></div></div>
           <div><label className="block text-sm font-medium text-gray-400 mb-2">Área (ID)</label><div className="relative"><MapPinIcon className="absolute left-4 top-3.5 h-5 w-5 text-gray-500 pointer-events-none" /><input type="number" placeholder="Ej. 1, 2..." value={areaFiltro} onChange={(e) => setAreaFiltro(e.target.value)} className="bg-black/30 border border-white/10 text-white rounded-xl w-full pl-12 p-3.5 focus:border-creamy-blue transition-all" /></div></div>
         </div>
-        <div className="flex flex-col md:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
           <button onClick={aplicarFiltros} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 px-6 rounded-xl shadow-lg cursor-pointer">Aplicar Filtros</button>
-          <button onClick={limpiarFiltros} className="md:w-48 bg-transparent border border-white/20 text-gray-300 hover:bg-white/10 hover:text-white font-bold py-4 px-6 rounded-xl cursor-pointer">Limpiar</button>
+          <button onClick={limpiarFiltros} className="sm:w-40 md:w-48 bg-transparent border border-white/20 text-gray-300 hover:bg-white/10 hover:text-white font-bold py-4 px-6 rounded-xl cursor-pointer">Limpiar</button>
         </div>
       </div>
 
@@ -189,24 +189,26 @@ const Reportes = ({ setVistaActual, predioActualId }) => {
       </div>
 
       {/* GRÁFICA */}
-      <div className="bg-earth-panel p-8 rounded-4xl border border-white/5 shadow-2xl mb-8">
+      <div className="bg-earth-panel p-4 md:p-8 rounded-3xl md:rounded-4xl border border-white/5 shadow-2xl mb-8">
         <div className="flex items-center gap-3 text-white font-bold text-xl mb-8"><ChartBarIcon className="w-7 h-7 text-creamy-blue" /> Tendencias Semanales</div>
-        <div className="relative h-64 border-b border-l border-white/10 flex items-end justify-around pb-0 pt-4 px-2">
+        <div className="overflow-x-auto">
+        <div className="relative h-56 md:h-64 min-w-[520px] border-b border-l border-white/10 flex items-end justify-around pb-0 pt-4 px-2">
           <div className="absolute w-full h-full border-t border-white/5 top-1/4 left-0"></div>
           <div className="absolute w-full h-full border-t border-white/5 top-2/4 left-0"></div>
           <div className="absolute w-full h-full border-t border-white/5 top-3/4 left-0"></div>
           {datosGrafica.map((dato, i) => (
             <div key={i} className="flex flex-col items-center gap-2 h-full justify-end z-10 w-full">
               <div className="flex items-end gap-1.5 w-full justify-center h-full">
-                <div className="w-3 md:w-5 bg-[#34d399] rounded-t-sm hover:opacity-80 transition-opacity relative group" style={{ height: `${Math.min(dato.h, 100)}%` }}><span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs text-white opacity-0 group-hover:opacity-100">{dato.h}</span></div>
-                <div className="w-3 md:w-5 bg-[#fbbf24] rounded-t-sm hover:opacity-80 transition-opacity relative group" style={{ height: `${Math.min(dato.t, 100)}%` }}><span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs text-white opacity-0 group-hover:opacity-100">{dato.t}</span></div>
-                <div className="w-3 md:w-5 bg-[#22d3ee] rounded-t-sm hover:opacity-80 transition-opacity relative group" style={{ height: `${Math.min(dato.r, 100)}%` }}><span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs text-white opacity-0 group-hover:opacity-100">{dato.r}</span></div>
+                <div className="w-2 sm:w-3 md:w-5 bg-[#34d399] rounded-t-sm hover:opacity-80 transition-opacity relative group" style={{ height: `${Math.min(dato.h, 100)}%` }}><span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] md:text-xs text-white opacity-0 group-hover:opacity-100">{dato.h}</span></div>
+                <div className="w-2 sm:w-3 md:w-5 bg-[#fbbf24] rounded-t-sm hover:opacity-80 transition-opacity relative group" style={{ height: `${Math.min(dato.t, 100)}%` }}><span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] md:text-xs text-white opacity-0 group-hover:opacity-100">{dato.t}</span></div>
+                <div className="w-2 sm:w-3 md:w-5 bg-[#22d3ee] rounded-t-sm hover:opacity-80 transition-opacity relative group" style={{ height: `${Math.min(dato.r, 100)}%` }}><span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] md:text-xs text-white opacity-0 group-hover:opacity-100">{dato.r}</span></div>
               </div>
               <span className="text-xs text-gray-500 font-bold mt-2">{dato.dia}</span>
             </div>
           ))}
         </div>
-        <div className="flex justify-center gap-6 mt-6">
+        </div>
+        <div className="flex flex-wrap justify-center gap-4 md:gap-6 mt-6">
           <div className="flex items-center gap-2"><div className="w-3 h-3 bg-[#34d399]"></div><span className="text-sm text-[#34d399]">Humedad (%)</span></div>
           <div className="flex items-center gap-2"><div className="w-3 h-3 bg-[#fbbf24]"></div><span className="text-sm text-[#fbbf24]">Temperatura (°C)</span></div>
           <div className="flex items-center gap-2"><div className="w-3 h-3 bg-[#22d3ee]"></div><span className="text-sm text-[#22d3ee]">Riego Est. (min)</span></div>
@@ -214,22 +216,22 @@ const Reportes = ({ setVistaActual, predioActualId }) => {
       </div>
 
       {/* TABLA */}
-      <div className="bg-earth-panel rounded-4xl border border-white/5 shadow-2xl overflow-hidden">
-        <div className="p-8 border-b border-white/5 flex items-center gap-3"><PresentationChartLineIcon className="w-7 h-7 text-creamy-blue" /><h3 className="text-xl font-serif font-bold text-white">Estadísticas por Área</h3></div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-black/20 text-gray-400 text-sm font-bold border-b border-white/10"><tr><th className="px-8 py-5">Área</th><th className="px-8 py-5">Humedad</th><th className="px-8 py-5">Eficiencia</th><th className="px-8 py-5">Agua (L)</th><th className="px-8 py-5">Estado</th></tr></thead>
+      <div className="bg-earth-panel rounded-3xl md:rounded-4xl border border-white/5 shadow-2xl overflow-hidden">
+        <div className="p-4 md:p-8 border-b border-white/5 flex items-center gap-3"><PresentationChartLineIcon className="w-7 h-7 text-creamy-blue" /><h3 className="text-xl font-serif font-bold text-white">Estadísticas por Área</h3></div>
+        <div className="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
+          <table className="w-full min-w-[720px] text-left">
+            <thead className="bg-black/20 text-gray-400 text-sm font-bold border-b border-white/10"><tr><th className="px-3 md:px-5 lg:px-8 py-4 md:py-5">Área</th><th className="px-3 md:px-5 lg:px-8 py-4 md:py-5">Humedad</th><th className="px-3 md:px-5 lg:px-8 py-4 md:py-5">Eficiencia</th><th className="px-3 md:px-5 lg:px-8 py-4 md:py-5">Agua (L)</th><th className="px-3 md:px-5 lg:px-8 py-4 md:py-5">Estado</th></tr></thead>
             <tbody className="divide-y divide-white/5">
               {statsPorArea.map((area) => (
                 <tr key={area.id} className="hover:bg-white/5 transition-colors">
-                  <td className="px-8 py-6 text-white font-bold">Parcela #{area.id}</td>
-                  <td className="px-8 py-6 text-emerald-400 font-bold">{area.humedad}%</td>
-                  <td className="px-8 py-6"><div className="flex items-center gap-3"><div className="w-24 bg-gray-800 rounded-full h-2 overflow-hidden"><div className={`h-2 rounded-full ${area.eficiencia >= 80 ? 'bg-emerald-400' : 'bg-amber-500'}`} style={{ width: `${Math.min(area.eficiencia, 100)}%` }}></div></div><span className="text-sm text-gray-300">{area.eficiencia}%</span></div></td>
-                  <td className="px-8 py-6 text-gray-300">{area.agua}L</td>
-                  <td className="px-8 py-6">{area.eficiencia >= 80 ? (<span className="px-4 py-1.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 uppercase tracking-wider border border-emerald-500/20">Óptimo</span>) : (<span className="px-4 py-1.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400 uppercase tracking-wider border border-amber-500/20">Advertencia</span>)}</td>
+                  <td className="px-3 md:px-5 lg:px-8 py-4 md:py-6 text-white font-bold">Parcela #{area.id}</td>
+                  <td className="px-3 md:px-5 lg:px-8 py-4 md:py-6 text-emerald-400 font-bold">{area.humedad}%</td>
+                  <td className="px-3 md:px-5 lg:px-8 py-4 md:py-6"><div className="flex items-center gap-3"><div className="w-20 md:w-24 bg-gray-800 rounded-full h-2 overflow-hidden"><div className={`h-2 rounded-full ${area.eficiencia >= 80 ? 'bg-emerald-400' : 'bg-amber-500'}`} style={{ width: `${Math.min(area.eficiencia, 100)}%` }}></div></div><span className="text-sm text-gray-300">{area.eficiencia}%</span></div></td>
+                  <td className="px-3 md:px-5 lg:px-8 py-4 md:py-6 text-gray-300">{area.agua}L</td>
+                  <td className="px-3 md:px-5 lg:px-8 py-4 md:py-6">{area.eficiencia >= 80 ? (<span className="px-3 md:px-4 py-1.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 uppercase tracking-wider border border-emerald-500/20">Óptimo</span>) : (<span className="px-3 md:px-4 py-1.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-400 uppercase tracking-wider border border-amber-500/20">Advertencia</span>)}</td>
                 </tr>
               ))}
-              {statsPorArea.length === 0 && (<tr><td colSpan="5" className="px-8 py-10 text-center text-gray-500">No hay datos en el rango seleccionado.</td></tr>)}
+              {statsPorArea.length === 0 && (<tr><td colSpan="5" className="px-3 md:px-8 py-10 text-center text-gray-500">No hay datos en el rango seleccionado.</td></tr>)}
             </tbody>
           </table>
         </div>

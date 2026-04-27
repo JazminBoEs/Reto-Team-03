@@ -6,13 +6,34 @@ import {
   ChartBarIcon,            
   UserCircleIcon,          
   AdjustmentsVerticalIcon,
-  ArrowLeftOnRectangleIcon
+  ArrowLeftOnRectangleIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 
 // Asegúrate de que el nombre de tu imagen coincida (logo.png, logo.svg, etc.)
 import logoIrrigo from '../assets/logo.png'; 
 
-const Sidebar = ({ vistaActual, setVistaActual, esAdmin, onLogout, alertasNoLeidas, usuarioActual, predioActual }) => {
+const Sidebar = ({
+  vistaActual,
+  setVistaActual,
+  esAdmin,
+  onLogout,
+  alertasNoLeidas,
+  usuarioActual,
+  predioActual,
+  mobileOpen = false,
+  onCloseMobile
+}) => {
+
+  const handleNavigation = (id) => {
+    setVistaActual(id);
+    if (onCloseMobile) onCloseMobile();
+  };
+
+  const handleLogout = () => {
+    if (onCloseMobile) onCloseMobile();
+    onLogout();
+  };
   
   const mainMenuItems = [
     { name: 'Panel Principal', icon: HomeIcon, id: 'dashboard' },
@@ -30,11 +51,15 @@ const Sidebar = ({ vistaActual, setVistaActual, esAdmin, onLogout, alertasNoLeid
   ];
 
   return (
-    <aside className="w-64 h-screen bg-earth-panel/40 border-r border-white/5 flex flex-col p-6 fixed left-0 top-0 backdrop-blur-sm overflow-y-auto">
+    <aside
+      className={`w-[18rem] md:w-64 h-screen bg-earth-panel/70 md:bg-earth-panel/40 border-r border-white/5 flex flex-col p-5 md:p-6 fixed left-0 top-0 backdrop-blur-sm overflow-y-auto z-50 transition-transform duration-300 ${
+        mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+      }`}
+    >
       
       {/* Cabecera / Logo interactivo */}
       <div 
-        onClick={() => setVistaActual('dashboard')}
+        onClick={() => handleNavigation('dashboard')}
         className="flex items-center gap-3 mb-6 px-2 cursor-pointer hover:opacity-80 transition-opacity"
       >
         <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden border border-white/10 bg-white/5">
@@ -47,6 +72,14 @@ const Sidebar = ({ vistaActual, setVistaActual, esAdmin, onLogout, alertasNoLeid
         <h1 className="text-2xl font-serif font-bold text-white tracking-tight">
           Irri<span className="text-creamy-blue">Go</span>
         </h1>
+        <button
+          type="button"
+          aria-label="Cerrar menú"
+          onClick={onCloseMobile}
+          className="ml-auto md:hidden p-2 rounded-xl text-gray-300 hover:text-white hover:bg-white/10"
+        >
+          <XMarkIcon className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Info del usuario logueado */}
@@ -87,7 +120,7 @@ const Sidebar = ({ vistaActual, setVistaActual, esAdmin, onLogout, alertasNoLeid
           return (
             <div
               key={item.name}
-              onClick={() => setVistaActual(item.id)}
+              onClick={() => handleNavigation(item.id)}
               className={`flex items-center gap-4 p-3 rounded-2xl cursor-pointer transition-all duration-300 ${
                 isActive 
                   ? 'bg-creamy-blue/10 text-creamy-blue border border-creamy-blue/20 shadow-inner' 
@@ -121,9 +154,9 @@ const Sidebar = ({ vistaActual, setVistaActual, esAdmin, onLogout, alertasNoLeid
               key={item.name}
               onClick={() => {
                 if (item.isLogout) {
-                  onLogout();
+                  handleLogout();
                 } else {
-                  setVistaActual(item.id);
+                  handleNavigation(item.id);
                 }
               }}
               className={`flex items-center gap-4 p-3 rounded-2xl cursor-pointer transition-all duration-300 ${

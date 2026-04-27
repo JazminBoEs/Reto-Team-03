@@ -107,7 +107,7 @@ const AreasRiego = ({ setVistaActual, setParcelaActiva, predioActualId }) => {
   return (
     <div className="animate-fade-in pb-10">
       
-      <header className="mb-10">
+      <header className="mb-8 md:mb-10">
         <div 
           onClick={() => setVistaActual('dashboard')}
           className="flex items-center gap-2 text-creamy-blue hover:text-white cursor-pointer transition-colors w-fit mb-4"
@@ -115,11 +115,11 @@ const AreasRiego = ({ setVistaActual, setParcelaActiva, predioActualId }) => {
           <ArrowLeftIcon className="w-4 h-4" />
           <span className="text-sm font-bold">Volver al Dashboard</span>
         </div>
-        <h2 className="text-4xl font-serif font-bold text-white mb-2">Áreas de Riego</h2>
+        <h2 className="text-3xl md:text-4xl font-serif font-bold text-white mb-2">Áreas de Riego</h2>
         <p className="text-gray-400">Estado en tiempo real de las parcelas conectadas</p>
       </header>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 md:gap-8">
         {parcelas.map((parcela) => {
           const styles = getStatusStyles(parcela.estado);
           
@@ -131,11 +131,11 @@ const AreasRiego = ({ setVistaActual, setParcelaActiva, predioActualId }) => {
                 setParcelaActiva(parcela.id);
                 setVistaActual('detalle-parcela');
               }}
-              className={`p-8 rounded-[2.5rem] border ${styles.cardBorder} ${styles.cardBg} transition-all hover:shadow-2xl group cursor-pointer relative overflow-hidden`}
+              className={`p-5 md:p-8 rounded-3xl md:rounded-[2.5rem] border ${styles.cardBorder} ${styles.cardBg} transition-all hover:shadow-2xl group cursor-pointer relative overflow-hidden`}
             >
-              <div className="flex justify-between items-start mb-6 relative z-10">
+              <div className="flex justify-between items-start gap-4 mb-6 relative z-10">
                 <div>
-                  <h3 className="text-2xl font-serif font-bold text-white mb-2 group-hover:text-creamy-blue transition-colors">
+                  <h3 className="text-xl md:text-2xl font-serif font-bold text-white mb-2 group-hover:text-creamy-blue transition-colors">
                     {parcela.nombre} 
                   </h3>
                   <div className="flex items-center gap-3">
@@ -148,39 +148,39 @@ const AreasRiego = ({ setVistaActual, setParcelaActiva, predioActualId }) => {
                 <ChevronRightIcon className="w-6 h-6 text-gray-500 group-hover:text-white transition-colors" />
               </div>
 
-              <div className="grid grid-cols-3 gap-4 relative z-10">
-                <div className="bg-black/40 rounded-2xl p-4 border border-white/5 backdrop-blur-sm">
-                  <div className="flex items-center gap-2 text-gray-400 mb-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 relative z-10">
+                <div className="bg-black/40 rounded-2xl p-4 border border-white/5 backdrop-blur-sm text-center">
+                  <div className="flex items-center justify-center gap-2 text-gray-400 mb-3">
                     <CloudIcon className="w-4 h-4 text-creamy-blue/70" />
                     <span className="text-xs font-medium uppercase tracking-wider">Humedad</span>
                   </div>
-                  <span className="text-2xl font-bold text-white/90">{parcela.humedad}</span>
+                  <span className="text-xl md:text-2xl font-bold text-white/90 leading-none">{parcela.humedad}</span>
                 </div>
 
-                <div className="bg-black/40 rounded-2xl p-4 border border-white/5 backdrop-blur-sm">
-                  <div className="flex items-center gap-2 text-gray-400 mb-3">
+                <div className="bg-black/40 rounded-2xl p-4 border border-white/5 backdrop-blur-sm text-center">
+                  <div className="flex items-center justify-center gap-2 text-gray-400 mb-3">
                     <ChartBarIcon className="w-4 h-4 text-emerald-500/70" />
                     <span className="text-xs font-medium uppercase tracking-wider">NDVI</span>
                   </div>
-                  <span className="text-2xl font-bold text-white/90">{parcela.ndvi}</span>
+                  <span className="text-xl md:text-2xl font-bold text-white/90 leading-none">{parcela.ndvi}</span>
                 </div>
 
-                <div className="bg-black/40 rounded-2xl p-4 border border-white/5 backdrop-blur-sm">
-                  <div className="flex items-center gap-2 text-gray-400 mb-3">
+                <div className="bg-black/40 rounded-2xl p-4 border border-white/5 backdrop-blur-sm text-center">
+                  <div className="flex items-center justify-center gap-2 text-gray-400 mb-3">
                     <BeakerIcon className="w-4 h-4 text-river-blue/70" />
                     <span className="text-xs font-medium uppercase tracking-wider">Consumo</span>
                   </div>
-                  <span className="text-2xl font-bold text-white/90">{parcela.consumo}</span>
+                  <span className="text-xl md:text-2xl font-bold text-white/90 leading-none">{parcela.consumo}</span>
                 </div>
 
                 {/* Ubicación */}
-                <div className="col-span-3 bg-black/20 rounded-2xl p-4 mt-2 border border-white/5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-gray-400">
+                <div className="col-span-1 sm:col-span-3 bg-black/20 rounded-2xl p-4 mt-1 border border-white/5">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="flex items-center justify-center sm:justify-start gap-2 text-gray-400">
                       <MapPinIcon className="w-4 h-4 text-gray-500" />
                       <span className="text-xs font-medium uppercase tracking-wider">Coordenadas</span>
                     </div>
-                    <div className="text-sm font-medium text-gray-500 font-mono">
+                    <div className="text-xs md:text-sm font-medium text-gray-500 font-mono text-center sm:text-right">
                       {parcela.lat} <span className="mx-2">|</span> {parcela.lng}
                     </div>
                   </div>

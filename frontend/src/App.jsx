@@ -13,6 +13,7 @@ import Registro from './components/Registro';
 import Onboarding from './components/Onboarding';
 import CambioPasswordObligatorio from './components/CambioPasswordObligatorio';
 import { API_BASE_URL } from './config';
+import { Bars3Icon } from '@heroicons/react/24/outline';
 
 // Helper: añade Authorization header si hay token
 export function authHeaders() {
@@ -33,6 +34,7 @@ function App() {
   const [requiereOnboarding, setRequiereOnboarding] = useState(false);
   const [requiereCambioPassword, setRequiereCambioPassword] = useState(false);
   const [predioActualId, setPredioActualId] = useState(null);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Conteo de alertas no leídas
   const [alertasNoLeidas, setAlertasNoLeidas] = useState(0);
@@ -185,20 +187,51 @@ function App() {
     ? predioActivo?.area
     : null;
 
+  const cambiarVista = (vista) => {
+    setVistaActual(vista);
+    setMobileSidebarOpen(false);
+  };
+
   return (
-    <div className="min-h-screen bg-earth-dark flex font-sans antialiased pb-10">
+    <div className="min-h-screen bg-earth-dark md:flex font-sans antialiased pb-6 md:pb-10">
+
+      {mobileSidebarOpen && (
+        <button
+          type="button"
+          aria-label="Cerrar menú lateral"
+          onClick={() => setMobileSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[1px] md:hidden"
+        />
+      )}
+
+      <header className="md:hidden fixed top-0 left-0 right-0 z-30 h-16 px-4 bg-earth-dark/95 border-b border-white/10 backdrop-blur-sm flex items-center justify-between">
+        <button
+          type="button"
+          aria-label="Abrir menú"
+          onClick={() => setMobileSidebarOpen(true)}
+          className="p-2 rounded-xl text-gray-200 hover:text-white hover:bg-white/10"
+        >
+          <Bars3Icon className="w-6 h-6" />
+        </button>
+        <p className="text-sm font-bold text-white tracking-wide">
+          Irri<span className="text-creamy-blue">Go</span>
+        </p>
+        <div className="w-10" />
+      </header>
 
       <Sidebar
         vistaActual={vistaActual}
-        setVistaActual={setVistaActual}
+        setVistaActual={cambiarVista}
         esAdmin={esAdmin}
         onLogout={cerrarSesion}
         alertasNoLeidas={alertasNoLeidas}
         usuarioActual={usuarioActual}
         predioActual={predioActivo}
+        mobileOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
       />
 
-      <main className="flex-1 ml-64 p-10">
+      <main className="flex-1 ml-0 md:ml-64 p-4 sm:p-6 md:p-10 pt-20 md:pt-10">
 
         {vistaActual === 'dashboard' && (
           <Dashboard

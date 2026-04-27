@@ -143,13 +143,13 @@ export default function MapaDePredio({ setVistaActual, setParcelaActiva, predioA
   return (
     <div className="animate-fade-in">
       {/* ─── HEADER ─── */}
-      <header className="mb-8">
-        <div className="flex items-center justify-between">
+      <header className="mb-6 md:mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-4xl font-serif font-bold text-white mb-2">
+            <h1 className="text-3xl md:text-4xl font-serif font-bold text-white mb-2">
               Mapa del Predio
             </h1>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-creamy-blue/80 font-medium">
                 Ubicación de Predios y Sensores
               </span>
@@ -164,7 +164,7 @@ export default function MapaDePredio({ setVistaActual, setParcelaActiva, predioA
           <button
             onClick={fetchData}
             disabled={loading}
-            className="flex items-center gap-2 px-5 py-3 bg-earth-panel border border-white/10 text-white font-semibold rounded-2xl hover:bg-white/5 hover:border-white/20 transition-all cursor-pointer disabled:opacity-50"
+            className="w-full md:w-auto justify-center flex items-center gap-2 px-5 py-3 bg-earth-panel border border-white/10 text-white font-semibold rounded-2xl hover:bg-white/5 hover:border-white/20 transition-all cursor-pointer disabled:opacity-50"
           >
             <ArrowPathIcon
               className={`w-5 h-5 text-creamy-blue ${loading ? "animate-spin" : ""}`}
@@ -188,7 +188,7 @@ export default function MapaDePredio({ setVistaActual, setParcelaActiva, predioA
       )}
 
       {/* ─── STATS BAR ─── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 mb-6">
         <div className="bg-earth-panel p-5 rounded-3xl border border-white/5 shadow-xl flex items-center gap-4">
           <div className="p-3 bg-creamy-blue/10 rounded-2xl">
             <BuildingOfficeIcon className="w-7 h-7 text-creamy-blue" />
@@ -227,9 +227,9 @@ export default function MapaDePredio({ setVistaActual, setParcelaActiva, predioA
       </div>
 
       {/* ─── MAP + DETAIL PANEL ─── */}
-      <div className="flex gap-6">
+      <div className="flex flex-col xl:flex-row gap-6">
         {/* Map Container */}
-        <div className="flex-1 bg-earth-panel rounded-4xl border border-white/5 shadow-2xl overflow-hidden relative">
+        <div className="flex-1 bg-earth-panel rounded-3xl md:rounded-4xl border border-white/5 shadow-2xl overflow-hidden relative">
           {/* Loading overlay */}
           {loading && (
             <div className="absolute inset-0 z-1000 bg-earth-dark/70 backdrop-blur-sm flex flex-col items-center justify-center">
@@ -238,11 +238,12 @@ export default function MapaDePredio({ setVistaActual, setParcelaActiva, predioA
             </div>
           )}
 
+          <div className="h-[320px] sm:h-[380px] md:h-[460px] lg:h-[520px] w-full">
           <MapContainer
             center={defaultCenter}
             zoom={15}
-            style={{ height: "520px", width: "100%" }}
-            className="z-0 rounded-4xl"
+            style={{ height: "100%", width: "100%" }}
+            className="z-0 rounded-3xl md:rounded-4xl"
           >
             <TileLayer
               attribution='&copy; <a href="https://carto.com/">CARTO</a>'
@@ -359,9 +360,10 @@ export default function MapaDePredio({ setVistaActual, setParcelaActiva, predioA
                 </Marker>
               ))}
           </MapContainer>
+          </div>
 
           {/* ── LEYENDA flotante ── */}
-          <div className="absolute bottom-6 left-6 z-999 bg-earth-dark/80 backdrop-blur-lg border border-white/10 rounded-2xl px-5 py-4 shadow-2xl">
+          <div className="absolute bottom-3 left-3 md:bottom-6 md:left-6 z-999 bg-earth-dark/80 backdrop-blur-lg border border-white/10 rounded-2xl px-3 md:px-5 py-3 md:py-4 shadow-2xl max-w-[85%]">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">
               Leyenda
             </p>
@@ -374,7 +376,7 @@ export default function MapaDePredio({ setVistaActual, setParcelaActiva, predioA
                     boxShadow: "0 0 8px rgba(167,199,231,.5)",
                   }}
                 ></span>
-                <span className="text-sm text-gray-300">Predio</span>
+                <span className="text-xs md:text-sm text-gray-300">Predio</span>
               </div>
               <div className="flex items-center gap-3">
                 <span
@@ -384,7 +386,7 @@ export default function MapaDePredio({ setVistaActual, setParcelaActiva, predioA
                     boxShadow: "0 0 8px rgba(0,255,157,.4)",
                   }}
                 ></span>
-                <span className="text-sm text-gray-300">Sensor (OK)</span>
+                <span className="text-xs md:text-sm text-gray-300">Sensor (OK)</span>
               </div>
               <div className="flex items-center gap-3">
                 <span
@@ -394,14 +396,14 @@ export default function MapaDePredio({ setVistaActual, setParcelaActiva, predioA
                     boxShadow: "0 0 8px rgba(239,68,68,.4)",
                   }}
                 ></span>
-                <span className="text-sm text-gray-300">Sensor (Batería baja)</span>
+                <span className="text-xs md:text-sm text-gray-300">Sensor (Batería baja)</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* ── DETAIL SIDEBAR ── */}
-        <div className="w-80 shrink-0 flex flex-col gap-5">
+        <div className="w-full xl:w-80 shrink-0 flex flex-col gap-5">
           {/* Selected Sensor Detail */}
           <div className="bg-earth-panel rounded-3xl border border-white/5 shadow-xl p-6 flex-1">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-5">

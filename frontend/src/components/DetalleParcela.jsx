@@ -98,7 +98,7 @@ const DetalleParcela = ({ setVistaActual, parcelaId, esAdmin, predioActualId }) 
     <div className="animate-fade-in pb-10">
 
       {/* NAVEGACIÓN SUPERIOR */}
-      <div className="flex items-center gap-6 mb-6 border-b border-white/5 pb-4">
+      <div className="flex flex-wrap items-center gap-4 md:gap-6 mb-6 border-b border-white/5 pb-4">
         <button onClick={() => setVistaActual('areas')} className="flex items-center gap-2 text-creamy-blue hover:text-white transition-colors text-sm font-bold cursor-pointer">
           <ArrowLeftIcon className="w-4 h-4" /> Volver a Áreas
         </button>
@@ -109,29 +109,29 @@ const DetalleParcela = ({ setVistaActual, parcelaId, esAdmin, predioActualId }) 
 
       {/* ENCABEZADO */}
       <header className="mb-8">
-        <h2 className="text-4xl font-serif font-bold text-white mb-2">
+        <h2 className="text-3xl md:text-4xl font-serif font-bold text-white mb-2">
           {datos.area.Nombre} - {datos.config.TipoCultivo || 'Sin Configurar'}
         </h2>
         <p className="text-gray-400">Estado: {datos.area.Estado ? 'Activo' : 'Inactivo'} • Datos en vivo</p>
       </header>
 
       {/* INFORMACIÓN GENERAL */}
-      <div className="bg-earth-panel p-6 rounded-4xl border border-white/5 shadow-xl mb-8">
+      <div className="bg-earth-panel p-4 md:p-6 rounded-3xl md:rounded-4xl border border-white/5 shadow-xl mb-8">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-lg font-bold text-white">Información General</h3>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
           <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
             <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Tamaño del Área</p>
-            <p className="text-xl font-bold text-white">{datos.area.Num_Hectareas} ha</p>
+            <p className="text-lg md:text-xl font-bold text-white">{datos.area.Num_Hectareas} ha</p>
           </div>
           <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
             <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Tipo de Cultivo</p>
-            <p className="text-xl font-bold text-white">{datos.config.TipoCultivo || 'Sin Configurar'}</p>
+            <p className="text-lg md:text-xl font-bold text-white">{datos.config.TipoCultivo || 'Sin Configurar'}</p>
           </div>
           <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
             <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Tipo de Tierra</p>
-            <p className="text-xl font-bold text-white">{datos.config.TipoTierra || 'N/D'}</p>
+            <p className="text-lg md:text-xl font-bold text-white">{datos.config.TipoTierra || 'N/D'}</p>
           </div>
           <div className="bg-black/20 p-4 rounded-2xl border border-white/5">
             <p className="text-xs text-gray-500 uppercase tracking-widest mb-1 flex items-center gap-2">
@@ -143,7 +143,7 @@ const DetalleParcela = ({ setVistaActual, parcelaId, esAdmin, predioActualId }) 
       </div>
 
       {/* TRES COLUMNAS */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 mb-8">
 
         {/* SUELO */}
         <div className="bg-emerald-950/20 border border-emerald-800/30 p-6 rounded-4xl shadow-lg">
@@ -154,20 +154,20 @@ const DetalleParcela = ({ setVistaActual, parcelaId, esAdmin, predioActualId }) 
           <div className="space-y-4">
             <div className="bg-black/20 p-4 rounded-2xl">
               <p className="text-xs text-gray-400 mb-1">Humedad del Suelo</p>
-              <p className="text-2xl font-bold text-emerald-400">{datos.medicion.Humedad_suelo || 0}%</p>
+              <p className="text-xl md:text-2xl font-bold text-emerald-400">{datos.medicion.Humedad_suelo || 0}%</p>
               <p className="text-[10px] text-emerald-500/70 mt-1">Rango ideal: {datos.config.RangoHumedadMIN || 0}% - {datos.config.RangoHumedadMAX || 0}%</p>
             </div>
             <div className="bg-black/20 p-4 rounded-2xl">
               <p className="text-xs text-gray-400 mb-1">Potencial Hídrico</p>
-              <p className="text-2xl font-bold text-white">{datos.medicion.Potencial_Hidrico || 0} MPa</p>
+              <p className="text-xl md:text-2xl font-bold text-white">{datos.medicion.Potencial_Hidrico || 0} MPa</p>
             </div>
             <div className="bg-black/20 p-4 rounded-2xl">
               <p className="text-xs text-gray-400 mb-1">Electroconductividad</p>
-              <p className="text-2xl font-bold text-white">{datos.medicion.Conductividad_suelo || 0} dS/m</p>
+              <p className="text-xl md:text-2xl font-bold text-white">{datos.medicion.Conductividad_suelo || 0} dS/m</p>
             </div>
             <div className="bg-black/20 p-4 rounded-2xl">
               <p className="text-xs text-gray-400 mb-1">Índice de Vegetación (NDVI)</p>
-              <p className="text-2xl font-bold text-emerald-400">{datos.medicion.Desarrollo_vegetativa || 0}</p>
+              <p className="text-xl md:text-2xl font-bold text-emerald-400">{datos.medicion.Desarrollo_vegetativa || 0}</p>
             </div>
           </div>
         </div>
@@ -182,18 +182,18 @@ const DetalleParcela = ({ setVistaActual, parcelaId, esAdmin, predioActualId }) 
             <div className="bg-river-blue/10 border border-river-blue/30 p-4 rounded-2xl flex justify-between items-center">
               <div>
                 <p className="text-xs text-river-blue mb-1">Estatus del Módulo</p>
-                <p className="text-2xl font-black text-river-blue tracking-widest">{datos.area.ID_Modulo ? 'CONECTADO' : 'OFFLINE'}</p>
+                <p className="text-xl md:text-2xl font-black text-river-blue tracking-widest">{datos.area.ID_Modulo ? 'CONECTADO' : 'OFFLINE'}</p>
                 <p className="text-[10px] text-river-blue/70 mt-1">Monitoreo activo</p>
               </div>
               <div className={`w-8 h-8 rounded-full border-4 ${datos.area.ID_Modulo ? 'border-river-blue animate-pulse' : 'border-gray-600'}`}></div>
             </div>
             <div className="bg-black/20 p-4 rounded-2xl">
               <p className="text-xs text-gray-400 mb-1">Consumo de Agua (Lectura actual)</p>
-              <p className="text-2xl font-bold text-white">{datos.medicion.consumo_agua || 0} L</p>
+              <p className="text-xl md:text-2xl font-bold text-white">{datos.medicion.consumo_agua || 0} L</p>
             </div>
             <div className="bg-black/20 p-4 rounded-2xl">
               <p className="text-xs text-gray-400 mb-1">Consumo Acumulado</p>
-              <p className="text-2xl font-bold text-white">{datos.medicion.Consumo_Acum || 0} L</p>
+              <p className="text-xl md:text-2xl font-bold text-white">{datos.medicion.Consumo_Acum || 0} L</p>
             </div>
             <div className="bg-creamy-blue/10 border border-creamy-blue/30 p-4 rounded-2xl mt-4">
               <p className="text-xs text-creamy-blue mb-1">Capacidad de Campo</p>
@@ -293,28 +293,33 @@ const DetalleParcela = ({ setVistaActual, parcelaId, esAdmin, predioActualId }) 
 
       {/* GRÁFICAS — DATOS DINÁMICOS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-earth-panel border border-white/5 p-6 rounded-4xl">
+        <div className="bg-earth-panel border border-white/5 p-4 md:p-6 rounded-3xl md:rounded-4xl">
           <h4 className="text-sm font-bold text-gray-300 mb-4">Historial de Humedad (últimas {humedadData.length} lecturas)</h4>
-          <div className="h-32 w-full flex items-end gap-2">
+          <div className="overflow-x-auto">
+            <div className="h-36 md:h-40 min-w-[280px] w-full flex items-end gap-2">
             {humedadData.map((h, i) => (
-              <div key={i} className="flex-1 bg-emerald-500/20 rounded-t-sm relative group hover:bg-emerald-500/40 transition-colors" style={{ height: `${Math.min(h, 100)}%` }}>
-                <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-white opacity-0 group-hover:opacity-100">{Math.round(h)}%</div>
+              <div key={i} className="flex-1 min-w-6 bg-emerald-500/20 rounded-t-sm relative hover:bg-emerald-500/40 transition-colors" style={{ height: `${Math.min(h, 100)}%` }}>
+                <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] text-white">{Math.round(h)}%</div>
               </div>
             ))}
+            </div>
           </div>
           <div className="flex justify-between text-[10px] text-gray-500 mt-2">
             <span>Más antiguo</span><span>→</span><span>Más reciente</span>
           </div>
         </div>
-        <div className="bg-earth-panel border border-white/5 p-6 rounded-4xl">
+        <div className="bg-earth-panel border border-white/5 p-4 md:p-6 rounded-3xl md:rounded-4xl">
           <h4 className="text-sm font-bold text-gray-300 mb-4">Evolución del NDVI (últimos {ndviData.length} registros)</h4>
-          <div className="h-32 w-full flex items-end gap-2 border-b border-white/10">
+          <div className="overflow-x-auto">
+            <div className="h-36 md:h-40 min-w-[280px] w-full flex items-end gap-2 border-b border-white/10">
             {ndviData.map((n, i) => (
-              <div key={i} className="flex-1 flex flex-col justify-end items-center group">
-                <div className="w-2 h-2 rounded-full bg-emerald-400 mb-1 group-hover:scale-150 transition-transform" style={{ marginBottom: `${Math.max((n - 50), 0) * 2}px` }}></div>
+              <div key={i} className="flex-1 min-w-6 flex flex-col justify-end items-center">
+                <span className="text-[10px] text-emerald-300 mb-1">{Math.round(n)}%</span>
+                <div className="w-2 h-2 rounded-full bg-emerald-400 mb-1" style={{ marginBottom: `${Math.max((n - 50), 0) * 2}px` }}></div>
                 <div className="w-px h-full bg-white/5"></div>
               </div>
             ))}
+            </div>
           </div>
           <div className="flex justify-between text-[10px] text-gray-500 mt-2">
             <span>Más antiguo</span><span>→</span><span>Más reciente</span>
