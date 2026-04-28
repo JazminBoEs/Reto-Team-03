@@ -69,9 +69,6 @@ class TestAuthFlows:
             {
                 "IDpredio": 1,
                 "Admin": True,
-                "Rol": "admin",
-                "Alcance": "todo",
-                "Area_Permitida": None,
                 "NombrePredio": "Rancho Norte",
                 "CodigoAcceso": "AB12CD34",
             }
@@ -85,7 +82,7 @@ class TestAuthFlows:
 
         assert response.status_code == 200
         assert "token" in response.json
-        assert response.json["usuario"]["predios"][0]["rol"] == "admin"
+        assert response.json["usuario"]["predios"][0]["admin"] is True
 
 
 class TestUsuariosCollection:
@@ -198,7 +195,7 @@ class TestUsuariosItem:
 
 class TestUsuariosPrediosCollection:
     def test_get_usuarios_predios_success(self, test_client):
-        predios = [{"IDusuario": 1, "IDpredio": 2, "Rol": "admin"}]
+        predios = [{"IDusuario": 1, "IDpredio": 2, "Admin": True}]
 
         with patch("main.execute_query", return_value=predios) as mock_eq:
             response = test_client.get("/api/v1/usuarios-predios")
@@ -208,12 +205,12 @@ class TestUsuariosPrediosCollection:
         mock_eq.assert_called_once()
 
     def test_post_usuarios_predios_success(self, test_client):
-        created_relation = {"IDusuario": 1, "IDpredio": 2, "Rol": "admin"}
+        created_relation = {"IDusuario": 1, "IDpredio": 2, "Admin": True}
 
         with patch("main.execute_query", side_effect=[None, created_relation]) as mock_eq:
             response = test_client.post(
                 "/api/v1/usuarios-predios",
-                json={"IDusuario": 1, "IDpredio": 2, "Rol": "admin"},
+                json={"IDusuario": 1, "IDpredio": 2, "Admin": True},
             )
 
         assert response.status_code == 201
@@ -224,7 +221,7 @@ class TestUsuariosPrediosCollection:
         with patch("main.execute_query", side_effect=Exception("DB error")):
             response = test_client.post(
                 "/api/v1/usuarios-predios",
-                json={"IDusuario": 1, "IDpredio": 2, "Rol": "admin"},
+                json={"IDusuario": 1, "IDpredio": 2, "Admin": True},
             )
 
         assert response.status_code == 500
@@ -233,7 +230,7 @@ class TestUsuariosPrediosCollection:
 
 class TestUsuariosPrediosItem:
     def test_get_usuario_predio_by_ids_success(self, test_client):
-        relation = {"IDusuario": 1, "IDpredio": 2, "Rol": "admin"}
+        relation = {"IDusuario": 1, "IDpredio": 2, "Admin": True}
 
         with patch("main.execute_query", return_value=relation) as mock_eq:
             response = test_client.get("/api/v1/usuarios-predios/1/2")
@@ -251,12 +248,12 @@ class TestUsuariosPrediosItem:
         mock_eq.assert_called_once()
 
     def test_put_usuario_predio_success(self, test_client):
-        updated_relation = {"IDusuario": 1, "IDpredio": 2, "Rol": "lector", "Alcance": "uno"}
+        updated_relation = {"IDusuario": 1, "IDpredio": 2, "Admin": False}
 
-        with patch("main.execute_query", side_effect=[{"Rol": "lector", "Admin": False}, 1, updated_relation]) as mock_eq:
+        with patch("main.execute_query", side_effect=[{"Admin": False}, 1, updated_relation]) as mock_eq:
             response = test_client.put(
                 "/api/v1/usuarios-predios/1/2",
-                json={"Rol": "lector", "Alcance": "uno"},
+                json={"Admin": False},
             )
 
         assert response.status_code == 200
@@ -264,10 +261,10 @@ class TestUsuariosPrediosItem:
         assert mock_eq.call_count == 3
 
     def test_put_usuario_predio_rechaza_degradar_admin_a_lector(self, test_client):
-        with patch("main.execute_query", return_value={"Rol": "admin", "Admin": True}) as mock_eq:
+        with patch("main.execute_query", return_value={"Admin": True}) as mock_eq:
             response = test_client.put(
                 "/api/v1/usuarios-predios/1/2",
-                json={"Rol": "lector"},
+                json={"Admin": False},
             )
 
         assert response.status_code == 403

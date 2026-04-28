@@ -88,8 +88,8 @@ const Perfil = ({
   };
 
   const predios = usuarioActual?.predios || [];
-  const misPredios = predios.filter(p => p.rol === 'admin');
-  const prediosCompartidos = predios.filter(p => p.rol !== 'admin');
+  const misPredios = predios.filter(p => p.admin);
+  const prediosCompartidos = predios.filter(p => !p.admin);
 
   if (cargando) {
     return (
@@ -241,7 +241,7 @@ const Perfil = ({
                     <span className="text-white font-bold">{p.nombrePredio}</span>
                     <span className="text-[10px] px-2 py-1 rounded-full border bg-blue-500/15 border-blue-500/30 text-blue-300 font-bold uppercase">Lector</span>
                   </div>
-                  <p className="text-xs text-gray-400">{p.alcance === 'uno' ? 'Acceso parcial' : 'Acceso total de lectura'}</p>
+                  <p className="text-xs text-gray-400">Acceso total de lectura</p>
                 </button>
               ))}
             </div>

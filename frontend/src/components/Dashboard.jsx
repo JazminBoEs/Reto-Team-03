@@ -12,7 +12,7 @@ import {
   BellAlertIcon
 } from '@heroicons/react/24/outline';
 
-const Dashboard = ({ setVistaActual, esAdmin, areaPermitida, predioActualId }) => {
+const Dashboard = ({ setVistaActual, esAdmin, predioActualId }) => {
   const [cargando, setCargando] = useState(true);
   const [dashboardData, setDashboardData] = useState({
     humedadPromedio: 0,

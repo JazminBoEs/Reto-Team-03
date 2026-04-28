@@ -217,11 +217,11 @@ def get_user_with_predios(user_id):
 
     roles_db = execute_query(
         """
-        SELECT up.IDpredio, up.Admin, up.Rol, up.Alcance, up.Area_Permitida,
+        SELECT up.IDpredio, up.Admin,
                p.NombrePredio, p.CodigoAcceso
         FROM Usuario_predio up
         JOIN Predio p ON p.IDpredio = up.IDpredio
-        WHERE up.IDusuario = %s AND up.Activo = TRUE
+        WHERE up.IDusuario = %s
         ORDER BY up.Fecha_Asignacion ASC
         """,
         (user_id,),
@@ -231,9 +231,6 @@ def get_user_with_predios(user_id):
     roles_payload = [
         {
             "predio": r['IDpredio'],
-            "rol": r['Rol'],
-            "alcance": r['Alcance'],
-            "area": r['Area_Permitida'],
             "nombrePredio": r['NombrePredio'],
             "codigoAcceso": r['CodigoAcceso'],
             "admin": bool(r['Admin'])
@@ -242,10 +239,8 @@ def get_user_with_predios(user_id):
     ]
 
     user['predios'] = roles_payload
-    user['esAdmin'] = any(r['Rol'] == 'admin' for r in roles_db)
+    user['esAdmin'] = any(bool(r['Admin']) for r in roles_db)
     user['predioActual'] = roles_db[0]['IDpredio'] if roles_db else None
-    user['areaPermitida'] = roles_db[0]['Area_Permitida'] if roles_db else None
-    user['alcance'] = roles_db[0]['Alcance'] if roles_db else 'todo'
     return user, roles_payload
 
 
@@ -257,9 +252,9 @@ def get_authenticated_user_id():
 def get_user_predio_relation(user_id, id_predio):
     return execute_query(
         """
-        SELECT IDusuario, IDpredio, Rol, Alcance, Area_Permitida, Activo
+        SELECT IDusuario, IDpredio, Admin
         FROM Usuario_predio
-        WHERE IDusuario = %s AND IDpredio = %s AND Activo = TRUE
+        WHERE IDusuario = %s AND IDpredio = %s
         """,
         (user_id, id_predio),
         fetch=True,
@@ -280,29 +275,19 @@ def get_area_with_predio(id_area):
     )
 
 
-def get_area_access_relation(user_id, id_area):
-    return execute_query(
+def can_access_area(user_id, id_area):
+    rel = execute_query(
         """
-        SELECT up.IDusuario, up.IDpredio, up.Rol, up.Alcance, up.Area_Permitida
+        SELECT 1
         FROM Usuario_predio up
         JOIN AreaRiego a ON a.IDpredio = up.IDpredio
-        WHERE up.IDusuario = %s AND a.ID_Area = %s AND up.Activo = TRUE
+        WHERE up.IDusuario = %s AND a.ID_Area = %s
         """,
         (user_id, id_area),
         fetch=True,
         fetchone=True,
     )
-
-
-def can_access_area(user_id, id_area):
-    rel = get_area_access_relation(user_id, id_area)
-    if not rel:
-        return False
-    if rel['Rol'] == 'admin':
-        return True
-    if rel['Alcance'] == 'uno':
-        return rel['Area_Permitida'] == id_area
-    return True
+    return rel is not None
 
 # -------------------------------------------------------------------
 # Manejo Global de Errores
@@ -452,8 +437,6 @@ def crear_predio_onboarding():
         'IDusuario': user_id,
         'IDpredio': predio_id,
         'Admin': True,
-        'Rol': 'admin',
-        'Alcance': 'todo'
     })
     execute_query(q2, p2, commit=True)
 
@@ -501,8 +484,6 @@ def solicitar_acceso_predio_onboarding():
         'IDusuario': user_id,
         'IDpredio': predio['IDpredio'],
         'Admin': False,
-        'Rol': 'lector',
-        'Alcance': 'todo'
     })
     execute_query(q, p, commit=True)
 
@@ -518,11 +499,11 @@ def get_mis_predios():
     user_id = get_authenticated_user_id()
     roles_db = execute_query(
         """
-        SELECT up.IDpredio, up.Admin, up.Rol, up.Alcance, up.Area_Permitida,
+        SELECT up.IDpredio, up.Admin,
                p.NombrePredio, p.Ubicacion, p.CodigoAcceso
         FROM Usuario_predio up
         JOIN Predio p ON p.IDpredio = up.IDpredio
-        WHERE up.IDusuario = %s AND up.Activo = TRUE
+        WHERE up.IDusuario = %s
         ORDER BY up.Fecha_Asignacion ASC
         """,
         (user_id,),
@@ -535,10 +516,7 @@ def get_mis_predios():
             "NombrePredio": r['NombrePredio'],
             "Ubicacion": r['Ubicacion'],
             "CodigoAcceso": r['CodigoAcceso'],
-            "Rol": r['Rol'],
             "Admin": bool(r['Admin']),
-            "Alcance": r['Alcance'],
-            "Area_Permitida": r['Area_Permitida']
         }
         for r in roles_db
     ]
@@ -627,10 +605,10 @@ def regenerar_codigo_predio(idPredio):
     """Solo el admin del predio puede regenerar el código. Los lectores existentes no pierden acceso."""
     user_id = get_authenticated_user_id()
     rol = execute_query(
-        "SELECT Rol FROM Usuario_predio WHERE IDusuario = %s AND IDpredio = %s AND Activo = TRUE",
+        "SELECT Admin FROM Usuario_predio WHERE IDusuario = %s AND IDpredio = %s",
         (user_id, idPredio), fetch=True, fetchone=True
     )
-    if not rol or rol['Rol'] != 'admin':
+    if not rol or not bool(rol['Admin']):
         return jsonify({"code": 403, "message": "Solo el administrador del predio puede regenerar el código"}), 403
 
     nuevo_codigo = generar_codigo_acceso()
@@ -649,7 +627,7 @@ def get_predios():
         SELECT p.*
         FROM Predio p
         JOIN Usuario_predio up ON up.IDpredio = p.IDpredio
-        WHERE up.IDusuario = %s AND up.Activo = TRUE
+        WHERE up.IDusuario = %s
         ORDER BY p.IDpredio ASC
         """,
         (user_id,),
@@ -710,12 +688,19 @@ def get_usuarios_predios():
 
 @app.route('/api/v1/usuarios-predios', methods=['POST'])
 def crear_usuario_predio():
-    data = request.json
-    query, params = build_insert_query('Usuario_predio', data)
+    data = request.json or {}
+    if 'IDusuario' not in data or 'IDpredio' not in data:
+        return jsonify({"code": 400, "message": "IDusuario e IDpredio son requeridos"}), 400
+    payload = {
+        'IDusuario': data['IDusuario'],
+        'IDpredio': data['IDpredio'],
+        'Admin': bool(data.get('Admin', False)),
+    }
+    query, params = build_insert_query('Usuario_predio', payload)
     execute_query(query, params, commit=True)
     
     new_record = execute_query("SELECT * FROM Usuario_predio WHERE IDusuario = %s AND IDpredio = %s", 
-                               (data['IDusuario'], data['IDpredio']), fetch=True, fetchone=True)
+                               (payload['IDusuario'], payload['IDpredio']), fetch=True, fetchone=True)
     return jsonify(new_record), 201
 
 @app.route('/api/v1/usuarios-predios/<int:idUsuario>/<int:idPredio>', methods=['GET'])
@@ -728,19 +713,22 @@ def get_usuario_predio_by_ids(idUsuario, idPredio):
 
 @app.route('/api/v1/usuarios-predios/<int:idUsuario>/<int:idPredio>', methods=['PUT'])
 def actualizar_usuario_predio(idUsuario, idPredio):
-    data = request.json
-    existing = execute_query("SELECT Rol, Admin FROM Usuario_predio WHERE IDusuario = %s AND IDpredio = %s", 
+    data = request.json or {}
+    existing = execute_query("SELECT Admin FROM Usuario_predio WHERE IDusuario = %s AND IDpredio = %s", 
                              (idUsuario, idPredio), fetch=True, fetchone=True)
     if not existing:
         return jsonify({"code": 404, "message": "No encontrado"}), 404
 
-    nuevo_rol = data.get('Rol')
     nuevo_admin = data.get('Admin')
-    intenta_degradar = nuevo_rol == 'lector' or ('Admin' in data and nuevo_admin in (False, 0, '0', 'false', 'False'))
-    if existing['Rol'] == 'admin' and intenta_degradar:
+    intenta_degradar = 'Admin' in data and nuevo_admin in (False, 0, '0', 'false', 'False')
+    if bool(existing['Admin']) and intenta_degradar:
         return jsonify({"code": 403, "message": "Un administrador del predio no puede convertirse en lector"}), 403
 
-    query, params = build_update_query_composite('Usuario_predio', data, {'IDusuario': idUsuario, 'IDpredio': idPredio})
+    payload = {}
+    if 'Admin' in data:
+        payload['Admin'] = bool(data['Admin'])
+
+    query, params = build_update_query_composite('Usuario_predio', payload, {'IDusuario': idUsuario, 'IDpredio': idPredio})
     if query:
         execute_query(query, params, commit=True)
 
@@ -818,18 +806,11 @@ def get_areas_riego():
     if not rel:
         return jsonify({"code": 403, "message": "Sin acceso a este predio"}), 403
 
-    if rel['Rol'] == 'lector' and rel['Alcance'] == 'uno' and rel['Area_Permitida']:
-        records = execute_query(
-            "SELECT * FROM AreaRiego WHERE IDpredio = %s AND ID_Area = %s",
-            (id_predio, rel['Area_Permitida']),
-            fetch=True,
-        ) or []
-    else:
-        records = execute_query(
-            "SELECT * FROM AreaRiego WHERE IDpredio = %s",
-            (id_predio,),
-            fetch=True,
-        ) or []
+    records = execute_query(
+        "SELECT * FROM AreaRiego WHERE IDpredio = %s",
+        (id_predio,),
+        fetch=True,
+    ) or []
     return jsonify(records), 200
 
 @app.route('/api/v1/areas-riego', methods=['POST'])

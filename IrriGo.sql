@@ -38,22 +38,16 @@ CREATE TABLE IF NOT EXISTS Predio (
 );
 
 -- ------------------------------------------------------------
--- Tabla: Usuario_predio (Relación M:N extendida con roles)
+-- Tabla: Usuario_predio (Relación M:N con admin boolean)
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS Usuario_predio (
     IDusuario        INT          NOT NULL,
     IDpredio         INT          NOT NULL,
-    Admin            BOOLEAN      DEFAULT FALSE,                    -- Legacy, usar Rol
-    Rol              ENUM('admin','lector') DEFAULT 'lector',       -- Rol principal
-    Alcance          ENUM('todo','uno') DEFAULT 'todo',             -- Visibilidad
-    Area_Permitida   INT          DEFAULT NULL,                     -- FK a AreaRiego (para Alcance='uno')
-    Fecha_Expiracion DATETIME     DEFAULT NULL,                     -- NULL = sin expiración
-    Activo           BOOLEAN      DEFAULT TRUE,
+    Admin            BOOLEAN      DEFAULT FALSE,
     Fecha_Asignacion DATETIME     DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (IDusuario, IDpredio),
     FOREIGN KEY (IDusuario) REFERENCES Usuario(IDusuario) ON UPDATE CASCADE ON DELETE RESTRICT,
     FOREIGN KEY (IDpredio)  REFERENCES Predio(IDpredio)   ON UPDATE CASCADE ON DELETE RESTRICT
-    -- FK a Area_Permitida se agrega después de crear AreaRiego
 );
 
 -- ------------------------------------------------------------
@@ -81,11 +75,6 @@ CREATE TABLE IF NOT EXISTS AreaRiego (
     FOREIGN KEY (IDpredio)  REFERENCES Predio(IDpredio)   ON UPDATE CASCADE ON DELETE RESTRICT,
     FOREIGN KEY (ID_Modulo) REFERENCES ModuloControl(ID_Modulo) ON UPDATE CASCADE ON DELETE SET NULL
 );
-
--- Agregar FK de Area_Permitida ahora que AreaRiego existe
-ALTER TABLE Usuario_predio
-    ADD CONSTRAINT fk_area_permitida
-    FOREIGN KEY (Area_Permitida) REFERENCES AreaRiego(ID_Area) ON DELETE SET NULL;
 
 -- ------------------------------------------------------------
 -- Tabla: Sensor
@@ -178,18 +167,18 @@ CREATE TABLE IF NOT EXISTS RegistroAuditoria (
 -- Usuarios
 INSERT INTO Usuario (Nombre, Apellido, Email, Contrasena, Telefono)
 VALUES 
-    ('Admin', 'IrriGo', 'admin@irrigo.com', 'scrypt:32768:8:1$ZyKcaYeIUQVJPdXt$594866934d571ea1bc980e8eb4f01f1298b9bdd8a491174dde89b5776e33053089c035c6d19455c66ca80d5be7269f25277ac4eef78c1bdaaa829c0e9c44f1b5', '1234567890'),
+    ('Admin', 'IrriGo', 'admin@irrigo.com', 'scrypt:32768:8:1$gYuk4yRC1Onkm2V3$2d3391ac49927abf4a4eac2a73f67fcfbe641b2c53319763844f922a82c5ee8de53e43398019ad9f2b808b1701c8889ef52eb005bfb9b2ca439e7a1ea8f8f9bf', '1234567890'),
     ('Jazmin', 'BoEs', 'jazmin@example.com', 'scrypt:32768:8:1$NZc4YI7LijOmJ1aO$421206df3baeecf7dca4c824aac8e9392c141926c84c93018d30f6735db8112271d546c991f890d5f533412280408a6ce44ca36204dd7fcebfbb2cbfe55f1989', '0987654321');
 
 -- Predio (con CodigoAcceso inicial)
 INSERT INTO Predio (CodigoAcceso, NombrePredio, Ubicacion, Latitud, Longitud)
 VALUES ('RE2026AB', 'Rancho La Esperanza', 'Chihuahua, Chih.', 28.632996, -106.069100);
 
--- Relaciones Usuario-Predio con Rol explícito
-INSERT INTO Usuario_predio (IDusuario, IDpredio, Admin, Rol, Alcance)
+-- Relaciones Usuario-Predio
+INSERT INTO Usuario_predio (IDusuario, IDpredio, Admin)
 VALUES 
-    (1, 1, 1, 'admin', 'todo'),
-    (2, 1, 0, 'lector', 'todo');
+    (1, 1, 1),
+    (2, 1, 0);
 
 -- Módulo de control
 INSERT INTO ModuloControl (Nombre, IdentificadorRed, Estado)
@@ -198,9 +187,6 @@ VALUES ('Módulo Central Norte', 'MAC-10:22:33', TRUE);
 -- Área de riego
 INSERT INTO AreaRiego (IDpredio, ID_Modulo, Nombre, Num_Hectareas, Estado)
 VALUES (1, 1, 'Parcela Norte', 3.5, TRUE);
-
--- Actualizar lector con Area_Permitida (Parcela Norte = ID 1)
-UPDATE Usuario_predio SET Area_Permitida = 1, Alcance = 'uno' WHERE IDusuario = 2 AND IDpredio = 1;
 
 -- Sensor
 INSERT INTO Sensor (ID_Modulo, ID_Area, Latitud, Longitud, Bateria, Senal)

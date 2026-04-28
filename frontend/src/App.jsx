@@ -139,7 +139,7 @@ function App() {
         const res = await fetch(`${API_BASE_URL}/alertas?idPredio=${predioActualId}`, { headers: authHeaders() });
         if (res.ok) {
           const alertas = await res.json();
-          const esAdmin = (usuarioActual?.predios || []).some(p => p.predio === predioActualId && p.rol === 'admin');
+          const esAdmin = (usuarioActual?.predios || []).some(p => p.predio === predioActualId && p.admin);
           const noLeidas = alertas.filter(a => {
             if (esAdmin) return !a.Confirmada_Admin;
             return !a.Leida;
@@ -255,10 +255,7 @@ function App() {
   const predioActivo = usuarioActual?.predios?.find(p => p.predio === predioActualId)
     || usuarioActual?.predios?.[0]
     || null;
-  const esAdmin = predioActivo?.rol === 'admin';
-  const areaPermitida = (!esAdmin && predioActivo?.alcance === 'uno')
-    ? predioActivo?.area
-    : null;
+  const esAdmin = Boolean(predioActivo?.admin);
 
   const cambiarVista = (vista) => {
     setVistaActual(vista);
@@ -310,7 +307,6 @@ function App() {
           <Dashboard
             setVistaActual={setVistaActual}
             esAdmin={esAdmin}
-            areaPermitida={areaPermitida}
             predioActualId={predioActivo?.predio}
           />
         )}
@@ -319,7 +315,6 @@ function App() {
           <AreasRiego
             setVistaActual={setVistaActual}
             setParcelaActiva={setParcelaActiva}
-            areaPermitida={areaPermitida}
             predioActualId={predioActivo?.predio}
           />
         )}
@@ -358,7 +353,6 @@ function App() {
           <MapaDePredio
             setVistaActual={setVistaActual}
             setParcelaActiva={setParcelaActiva}
-            areaPermitida={areaPermitida}
             predioActualId={predioActivo?.predio}
           />
         )}
