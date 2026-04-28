@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { API_BASE_URL } from '../config';
-import { authHeaders } from '../App';
+import { authHeaders } from '../utils/authHeaders';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -77,7 +77,7 @@ export default function MapaDePredio({ setVistaActual, setParcelaActiva, predioA
   };
 
   // ── Fetch data from API ──
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!predioActualId) {
       setPredios([]);
       setSensores([]);
@@ -115,11 +115,11 @@ export default function MapaDePredio({ setVistaActual, setParcelaActiva, predioA
     } finally {
       setLoading(false);
     }
-  };
+  }, [predioActualId]);
 
   useEffect(() => {
     fetchData();
-  }, [predioActualId]);
+  }, [fetchData]);
 
   // ── Gather all valid coordinates for auto-fit ──
   const allCoords = [

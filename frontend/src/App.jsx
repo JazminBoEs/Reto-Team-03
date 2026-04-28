@@ -13,16 +13,10 @@ import Registro from './components/Registro';
 import Onboarding from './components/Onboarding';
 import CambioPasswordObligatorio from './components/CambioPasswordObligatorio';
 import { API_BASE_URL } from './config';
+import { authHeaders } from './utils/authHeaders';
 import { Bars3Icon } from '@heroicons/react/24/outline';
 
 // Helper: añade Authorization header si hay token
-export function authHeaders() {
-  const token = localStorage.getItem('irrigo_token');
-  return token
-    ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
-    : { 'Content-Type': 'application/json' };
-}
-
 function App() {
   const [vistaActual, setVistaActual] = useState('dashboard');
   const [parcelaActiva, setParcelaActiva] = useState(null);

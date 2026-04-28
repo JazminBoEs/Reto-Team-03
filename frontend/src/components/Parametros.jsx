@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
-import { authHeaders } from '../App';
+import { authHeaders } from '../utils/authHeaders';
 import { ArrowLeftIcon, PlusIcon, PencilSquareIcon, TrashIcon, MapPinIcon, Square3Stack3DIcon, BeakerIcon, CheckCircleIcon, ExclamationTriangleIcon, XMarkIcon, KeyIcon, ArrowPathIcon, ClipboardDocumentIcon } from '@heroicons/react/24/outline';
 
-const Parametros = ({ setVistaActual, usuarioActual, predioActualId, onPredioActualizado }) => {
+const Parametros = ({ setVistaActual, predioActualId, onPredioActualizado }) => {
   const [tab, setTab] = useState('cultivos'); // cultivos | predios | areas | sensores
   const [cargando, setCargando] = useState(true);
   const [configs, setConfigs] = useState([]);
@@ -74,19 +74,6 @@ const Parametros = ({ setVistaActual, usuarioActual, predioActualId, onPredioAct
     } catch { mostrarMensaje('error', 'Error de conexión'); }
   };
 
-  const eliminarPredio = async (id) => {
-    if (!confirm('¿Eliminar este predio?')) return;
-    try {
-      const res = await fetch(`${API_BASE_URL}/predios/${id}`, { method: 'DELETE', headers: authHeaders() });
-      if (res.ok) {
-        const prediosRestantes = predios.filter(p => p.IDpredio !== id);
-        setPredios(prediosRestantes);
-        await onPredioActualizado?.(prediosRestantes[0]?.IDpredio || null);
-        mostrarMensaje('exito', 'Predio eliminado');
-      }
-      else { const err = await res.json(); mostrarMensaje('error', err.message || 'Error al eliminar'); }
-    } catch { mostrarMensaje('error', 'Error de conexión'); }
-  };
 
   // ===== CRUD Áreas =====
   const guardarArea = async (data) => {
@@ -128,7 +115,11 @@ const Parametros = ({ setVistaActual, usuarioActual, predioActualId, onPredioAct
         // Verificar alertas automáticas con los nuevos rangos
         const areaId = data.ID_Area || updated.ID_Area;
         if (areaId) {
-          try { await fetch(`${API_BASE_URL}/alertas/verificar/${areaId}`, { headers: authHeaders() }); } catch {}
+          try {
+            await fetch(`${API_BASE_URL}/alertas/verificar/${areaId}`, { headers: authHeaders() });
+          } catch (error) {
+            console.error('Error al verificar alertas automaticas:', error);
+          }
         }
       } else { const err = await res.json(); mostrarMensaje('error', err.message || 'Error'); }
     } catch { mostrarMensaje('error', 'Error de conexión'); }

@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { KeyIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { API_BASE_URL } from '../config';
-import { authHeaders } from '../App';
+import { authHeaders } from '../utils/authHeaders';
 
 const reglasPassword = [
   { id: 'len', label: 'Minimo 8 caracteres', test: v => v.length >= 8 },
   { id: 'upper', label: '1 letra mayuscula', test: v => /[A-Z]/.test(v) },
   { id: 'lower', label: '1 letra minuscula', test: v => /[a-z]/.test(v) },
   { id: 'num', label: '1 numero', test: v => /\d/.test(v) },
-  { id: 'sym', label: '1 simbolo especial', test: v => /[!@#$%^&*()_+\-=\[\]{};:'",.<>?/\\|`~]/.test(v) },
+  { id: 'sym', label: '1 simbolo especial', test: v => /[!@#$%^&*()_+\-=[\]{};:'",.<>?/\\|`~]/.test(v) },
 ];
 
 export default function CambioPasswordObligatorio({ onSuccess }) {

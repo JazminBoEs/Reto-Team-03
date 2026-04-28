@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
 import { useClima } from './UseClima';
-import { authHeaders } from '../App';
+import { authHeaders } from '../utils/authHeaders';
 import {
   ArrowLeftIcon,
   HomeIcon,
@@ -11,7 +11,7 @@ import {
   MapPinIcon
 } from '@heroicons/react/24/outline';
 
-const DetalleParcela = ({ setVistaActual, parcelaId, esAdmin, predioActualId }) => {
+const DetalleParcela = ({ setVistaActual, parcelaId, predioActualId }) => {
   const [datos, setDatos] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [historialHumedad, setHistorialHumedad] = useState([]);
@@ -57,7 +57,11 @@ const DetalleParcela = ({ setVistaActual, parcelaId, esAdmin, predioActualId }) 
         }
 
         // Verificar alertas automáticas (compara medición actual vs config)
-        try { await fetch(`${API_BASE_URL}/alertas/verificar/${parcelaId}`, { headers: authHeaders() }); } catch {}
+        try {
+          await fetch(`${API_BASE_URL}/alertas/verificar/${parcelaId}`, { headers: authHeaders() });
+        } catch (error) {
+          console.error("Error al verificar alertas automaticas:", error);
+        }
 
         setCargando(false);
       } catch (error) {

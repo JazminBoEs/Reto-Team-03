@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
-import { authHeaders } from '../App';
+import { authHeaders } from '../utils/authHeaders';
 import { ArrowLeftIcon, ExclamationTriangleIcon, ShieldExclamationIcon, InformationCircleIcon, CheckCircleIcon, FunnelIcon, CheckBadgeIcon } from '@heroicons/react/24/outline';
 
 const Alertas = ({ setVistaActual, esAdmin, predioActualId, onAlertasChange }) => {

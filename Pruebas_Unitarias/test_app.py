@@ -3,6 +3,11 @@ from werkzeug.security import generate_password_hash
 from main import generar_token
 
 
+def auth_headers(user_id=1, email="user@example.com", roles=None):
+    token = generar_token(user_id, email, roles or [])
+    return {"Authorization": f"Bearer {token}"}
+
+
 class TestAuthFlows:
     def test_registro_crea_usuario_sin_rol(self, test_client):
         with patch(
@@ -159,6 +164,7 @@ class TestUsuariosItem:
             response = test_client.put(
                 "/api/v1/usuarios/1",
                 json={"Email": "updated@example.com"},
+                headers=auth_headers(1),
             )
 
         assert response.status_code == 200
@@ -170,6 +176,7 @@ class TestUsuariosItem:
             response = test_client.put(
                 "/api/v1/usuarios/1",
                 json={"Contrasena": "123"},
+                headers=auth_headers(1),
             )
 
         assert response.status_code == 400
@@ -178,7 +185,7 @@ class TestUsuariosItem:
 
     def test_delete_usuario_success(self, test_client):
         with patch("main.execute_query", side_effect=[{"IDusuario": 1}, 1]) as mock_eq:
-            response = test_client.delete("/api/v1/usuarios/1")
+            response = test_client.delete("/api/v1/usuarios/1", headers=auth_headers(1))
 
         assert response.status_code == 204
         assert response.get_data(as_text=True) == ""
@@ -186,7 +193,7 @@ class TestUsuariosItem:
 
     def test_delete_usuario_not_found(self, test_client):
         with patch("main.execute_query", return_value=None) as mock_eq:
-            response = test_client.delete("/api/v1/usuarios/999")
+            response = test_client.delete("/api/v1/usuarios/999", headers=auth_headers(999))
 
         assert response.status_code == 404
         assert response.json["code"] == 404
@@ -207,21 +214,23 @@ class TestUsuariosPrediosCollection:
     def test_post_usuarios_predios_success(self, test_client):
         created_relation = {"IDusuario": 1, "IDpredio": 2, "Admin": True}
 
-        with patch("main.execute_query", side_effect=[None, created_relation]) as mock_eq:
+        with patch("main.execute_query", side_effect=[{"Admin": True}, None, created_relation]) as mock_eq:
             response = test_client.post(
                 "/api/v1/usuarios-predios",
                 json={"IDusuario": 1, "IDpredio": 2, "Admin": True},
+                headers=auth_headers(1),
             )
 
         assert response.status_code == 201
         assert response.json == created_relation
-        assert mock_eq.call_count == 2
+        assert mock_eq.call_count == 3
 
     def test_post_usuarios_predios_server_error_returns_500(self, test_client):
         with patch("main.execute_query", side_effect=Exception("DB error")):
             response = test_client.post(
                 "/api/v1/usuarios-predios",
                 json={"IDusuario": 1, "IDpredio": 2, "Admin": True},
+                headers=auth_headers(1),
             )
 
         assert response.status_code == 500
@@ -250,43 +259,45 @@ class TestUsuariosPrediosItem:
     def test_put_usuario_predio_success(self, test_client):
         updated_relation = {"IDusuario": 1, "IDpredio": 2, "Admin": False}
 
-        with patch("main.execute_query", side_effect=[{"Admin": False}, 1, updated_relation]) as mock_eq:
+        with patch("main.execute_query", side_effect=[{"Admin": True}, {"Admin": False}, 1, updated_relation]) as mock_eq:
             response = test_client.put(
                 "/api/v1/usuarios-predios/1/2",
                 json={"Admin": False},
+                headers=auth_headers(1),
             )
 
         assert response.status_code == 200
         assert response.json == updated_relation
-        assert mock_eq.call_count == 3
+        assert mock_eq.call_count == 4
 
     def test_put_usuario_predio_rechaza_degradar_admin_a_lector(self, test_client):
-        with patch("main.execute_query", return_value={"Admin": True}) as mock_eq:
+        with patch("main.execute_query", side_effect=[{"Admin": True}, {"Admin": True}]) as mock_eq:
             response = test_client.put(
                 "/api/v1/usuarios-predios/1/2",
                 json={"Admin": False},
+                headers=auth_headers(1),
             )
 
         assert response.status_code == 403
         assert response.json["code"] == 403
         assert "no puede convertirse en lector" in response.json["message"]
-        mock_eq.assert_called_once()
+        assert mock_eq.call_count == 2
 
     def test_delete_usuario_predio_success(self, test_client):
-        with patch("main.execute_query", side_effect=[{"IDusuario": 1}, 1]) as mock_eq:
-            response = test_client.delete("/api/v1/usuarios-predios/1/2")
+        with patch("main.execute_query", side_effect=[{"Admin": True}, {"IDusuario": 1}, 1]) as mock_eq:
+            response = test_client.delete("/api/v1/usuarios-predios/1/2", headers=auth_headers(1))
 
         assert response.status_code == 204
         assert response.get_data(as_text=True) == ""
-        assert mock_eq.call_count == 2
+        assert mock_eq.call_count == 3
 
     def test_delete_usuario_predio_not_found(self, test_client):
-        with patch("main.execute_query", return_value=None) as mock_eq:
-            response = test_client.delete("/api/v1/usuarios-predios/1/99")
+        with patch("main.execute_query", side_effect=[{"Admin": True}, None]) as mock_eq:
+            response = test_client.delete("/api/v1/usuarios-predios/1/99", headers=auth_headers(1))
 
         assert response.status_code == 404
         assert response.json["code"] == 404
-        mock_eq.assert_called_once()
+        assert mock_eq.call_count == 2
 
 
 class TestSensoresItem:
@@ -311,28 +322,30 @@ class TestSensoresItem:
     def test_put_sensor_success(self, test_client):
         updated_sensor = {"IDsensor": 1, "Nombre": "Sensor B"}
 
-        with patch("main.execute_query", side_effect=[{"IDsensor": 1}, 1, updated_sensor]) as mock_eq:
+        with patch("main.execute_query", side_effect=[{"IDpredio": 2}, {"Admin": True}, 1, updated_sensor]) as mock_eq:
             response = test_client.put(
                 "/api/v1/sensores/1",
                 json={"Nombre": "Sensor B"},
+                headers=auth_headers(1),
             )
 
         assert response.status_code == 200
         assert response.json == updated_sensor
-        assert mock_eq.call_count == 3
+        assert mock_eq.call_count == 4
 
     def test_post_sensor_success(self, test_client):
         new_sensor = {"IDsensor": 1, "Nombre": "Sensor A"}
 
-        with patch("main.execute_query", side_effect=[1, new_sensor]) as mock_eq:
+        with patch("main.execute_query", side_effect=[{"IDpredio": 2}, {"Admin": True}, 1, new_sensor]) as mock_eq:
             response = test_client.post(
                 "/api/v1/sensores",
-                json={"Nombre": "Sensor A"},
+                json={"Nombre": "Sensor A", "ID_Area": 3},
+                headers=auth_headers(1),
             )
 
         assert response.status_code == 201
         assert response.json == new_sensor
-        assert mock_eq.call_count == 2
+        assert mock_eq.call_count == 4
 
     def test_unknown_route_returns_404(self, test_client):
         response = test_client.get("/api/v1/recurso-invalido")

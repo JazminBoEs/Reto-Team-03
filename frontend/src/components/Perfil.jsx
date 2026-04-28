@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
-import { authHeaders } from '../App';
+import { authHeaders } from '../utils/authHeaders';
 import {
   UserIcon,
   EnvelopeIcon,
