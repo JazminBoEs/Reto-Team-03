@@ -1,45 +1,48 @@
 README - Pruebas Unitarias
 ==========================
 
-Resumen de resultados:
-----------------------
-- Archivo de pruebas ejecutado: `Pruebas_Unitarias/test_app.py`
-- Fixture global: `Pruebas_Unitarias/conftest.py`
-- Comando ejecutado: `pytest Pruebas_Unitarias/test_app.py -v`
-- Resultado: todas las pruebas pasaron con éxito.
-- Salida del comando: exit code 0.
+Este documento explica cómo ejecutar las pruebas unitarias del backend de forma independiente.
 
-Qué se prueba:
---------------
-- Endpoints de colección y de ítem para `usuarios`, `sensores` y `usuarios-predios`.
-- Operaciones HTTP:
-  - `GET` colección e ítem exitosos (200)
-  - `POST` exitosos con respuesta del objeto creado (201)
-  - `DELETE` exitoso sin body (204)
-  - `404` para recursos inexistentes o ítems no encontrados
-  - `500` cuando `main.execute_query` lanza una excepción
-  - `400` para entradas inválidas en login de usuario
-- Se parchea solamente `main.execute_query` con `unittest.mock.patch("main.execute_query")`.
-- Para `usuarios-predios` se prueba exclusivamente a través de `app.test_client()`.
+Requisitos previos:
+-------------------
+- Python 3.8+ instalado.
+- Estar ubicado en la carpeta raíz del proyecto.
+- Contar con las dependencias de backend necesarias.
 
-Pasos para ejecutar las pruebas:
--------------------------------
-1. Asegúrate de estar en la carpeta raíz del proyecto:
+Dependencias necesarias:
+------------------------
+Las pruebas unitarias utilizan Flask y pytest, y el backend importa módulos de Flask y MySQL.
+Instala las dependencias con el siguiente comando:
+
+```bash
+cd /workspaces/Reto-Team-03
+python -m pip install --upgrade pip
+python -m pip install pytest flask flask-cors mysql-connector-python werkzeug
+```
+
+Ejecutar las pruebas:
+---------------------
+1. Ve a la carpeta raíz del proyecto:
    ```bash
    cd /workspaces/Reto-Team-03
    ```
-2. Instala las dependencias necesarias en el entorno Python, si no están instaladas:
-   ```bash
-   pip install pytest flask
-   ```
-3. Ejecuta el archivo de pruebas con pytest:
+2. Ejecuta el archivo de pruebas con pytest:
    ```bash
    pytest Pruebas_Unitarias/test_app.py -v
    ```
-4. Verifica que la salida muestre pruebas exitosas y que el comando termine con `exit code 0`.
+3. Si todo está correcto, deberías ver una salida similar a `== X passed in ...` y un `exit code 0`.
+
+Qué se prueba:
+--------------
+- Endpoints del backend mediante el cliente de pruebas `app.test_client()`.
+- Rutas de `usuarios`, `sensores` y `usuarios-predios`.
+- Estados HTTP esperados: `200`, `201`, `204`, `400`, `404`, `500`.
+- Validaciones de login y creación de usuarios.
+- Parcheo de `main.execute_query` con `unittest.mock.patch` para evitar llamadas reales a la base de datos.
 
 Notas importantes:
 ------------------
-- No se levanta un servidor real: las pruebas usan `app.test_client()`.
-- No se llama a funciones internas de los endpoints directamente; se hacen solicitudes HTTP simuladas.
-- El módulo `main.execute_query` está parcheado para evitar acceso real a la base de datos.
+- No es necesario levantar el servidor Flask en modo normal para ejecutar estas pruebas.
+- Las pruebas usan `app.test_client()`, por lo que las solicitudes se simulan internamente.
+- Si aparece un error de importación, instala las dependencias del backend con `python -m pip install ...`.
+- Ejecuta pytest desde la raíz del proyecto para que `Pruebas_Unitarias/conftest.py` pueda importar `main.py` correctamente.
