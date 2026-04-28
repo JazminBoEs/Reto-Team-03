@@ -729,10 +729,16 @@ def get_usuario_predio_by_ids(idUsuario, idPredio):
 @app.route('/api/v1/usuarios-predios/<int:idUsuario>/<int:idPredio>', methods=['PUT'])
 def actualizar_usuario_predio(idUsuario, idPredio):
     data = request.json
-    existing = execute_query("SELECT 1 FROM Usuario_predio WHERE IDusuario = %s AND IDpredio = %s", 
+    existing = execute_query("SELECT Rol, Admin FROM Usuario_predio WHERE IDusuario = %s AND IDpredio = %s", 
                              (idUsuario, idPredio), fetch=True, fetchone=True)
     if not existing:
         return jsonify({"code": 404, "message": "No encontrado"}), 404
+
+    nuevo_rol = data.get('Rol')
+    nuevo_admin = data.get('Admin')
+    intenta_degradar = nuevo_rol == 'lector' or ('Admin' in data and nuevo_admin in (False, 0, '0', 'false', 'False'))
+    if existing['Rol'] == 'admin' and intenta_degradar:
+        return jsonify({"code": 403, "message": "Un administrador del predio no puede convertirse en lector"}), 403
 
     query, params = build_update_query_composite('Usuario_predio', data, {'IDusuario': idUsuario, 'IDpredio': idPredio})
     if query:

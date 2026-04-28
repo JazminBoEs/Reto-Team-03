@@ -251,17 +251,29 @@ class TestUsuariosPrediosItem:
         mock_eq.assert_called_once()
 
     def test_put_usuario_predio_success(self, test_client):
-        updated_relation = {"IDusuario": 1, "IDpredio": 2, "Rol": "owner"}
+        updated_relation = {"IDusuario": 1, "IDpredio": 2, "Rol": "lector", "Alcance": "uno"}
 
-        with patch("main.execute_query", side_effect=[{"IDusuario": 1}, 1, updated_relation]) as mock_eq:
+        with patch("main.execute_query", side_effect=[{"Rol": "lector", "Admin": False}, 1, updated_relation]) as mock_eq:
             response = test_client.put(
                 "/api/v1/usuarios-predios/1/2",
-                json={"Rol": "owner"},
+                json={"Rol": "lector", "Alcance": "uno"},
             )
 
         assert response.status_code == 200
         assert response.json == updated_relation
         assert mock_eq.call_count == 3
+
+    def test_put_usuario_predio_rechaza_degradar_admin_a_lector(self, test_client):
+        with patch("main.execute_query", return_value={"Rol": "admin", "Admin": True}) as mock_eq:
+            response = test_client.put(
+                "/api/v1/usuarios-predios/1/2",
+                json={"Rol": "lector"},
+            )
+
+        assert response.status_code == 403
+        assert response.json["code"] == 403
+        assert "no puede convertirse en lector" in response.json["message"]
+        mock_eq.assert_called_once()
 
     def test_delete_usuario_predio_success(self, test_client):
         with patch("main.execute_query", side_effect=[{"IDusuario": 1}, 1]) as mock_eq:
