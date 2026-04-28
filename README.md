@@ -1,267 +1,303 @@
-# 🌾 IrriGo — Sistema Inteligente de Riego Agrícola
+# IrriGo - Sistema Inteligente de Riego Agricola
 
-IrriGo es una plataforma web diseñada para la monitorización en tiempo real, gestión y análisis de parcelas agrícolas. Permite a los agricultores visualizar el estado de humedad del suelo, controlar módulos de riego, recibir alertas climáticas, exportar reportes profesionales y gestionar sus parcelas con un sistema de roles (Administrador / Lector).
+IrriGo es una aplicacion web para monitorear, administrar y analizar predios agricolas. Permite registrar usuarios, crear predios, compartir acceso mediante codigos, gestionar areas de riego, consultar sensores, revisar alertas, generar reportes y visualizar informacion en un mapa.
 
----
+El sistema esta pensado para dos roles principales:
 
-## 🛠️ Tecnologías Utilizadas
+- Administrador: crea y administra predios, areas, configuraciones de cultivo y codigos de acceso.
+- Lector: se une a un predio mediante codigo y puede consultar informacion sin modificar parametros criticos.
 
-| Capa | Tecnologías |
-|---|---|
-| **Frontend** | React 19, Vite 7, TailwindCSS 4, Heroicons, React-Leaflet (Mapas) |
-| **Backend** | Python (Flask), Werkzeug (Hashing de contraseñas), Flask-CORS |
-| **Base de Datos** | MySQL 8.0 (Dockerizado) |
-| **Reportes** | jsPDF + jspdf-autotable (PDF), SheetJS/xlsx (Excel) |
-| **Clima** | Open-Meteo API (sincronización automática cada 10 min) |
+## Tecnologias
 
----
+### Backend
 
-## 🚀 Guía de Instalación y Ejecución Paso a Paso
+- Python 3
+- Flask
+- Flask-CORS
+- mysql-connector-python
+- Werkzeug para hashing de contrasenas
+- PyJWT, si esta instalado, para tokens JWT
+- itsdangerous como fallback de tokens
+- Open-Meteo API para datos climaticos
 
-Necesitarás **3 terminales** abiertas simultáneamente. Asegúrate de tener instalados: **Docker**, **Python 3.8+** y **Node.js 18+**.
+### Frontend
 
-### Paso 1: Clonar el repositorio
+- React 19
+- Vite 7
+- TailwindCSS 4
+- Heroicons
+- Leaflet y React-Leaflet
+- jsPDF y jspdf-autotable
+- SheetJS/xlsx
 
-```bash
-git clone <URL-del-repositorio>
-cd Reto-Team-03-entrega-final
+### Base de datos
+
+- MySQL 8
+- Docker Compose opcional para levantar MySQL local
+
+## Estructura principal
+
+```text
+.
+├── main.py                         # API Flask
+├── IrriGo.sql                      # Esquema MySQL y datos semilla
+├── Guide.yaml                      # Documentacion OpenAPI
+├── GUIA_CONFIGURACION.txt          # Guia rapida de configuracion
+├── docker-compose.yml              # MySQL en Docker
+├── Pruebas_Unitarias/              # Pruebas unitarias del backend
+└── frontend/
+    ├── package.json
+    ├── vite.config.js
+    └── src/
+        ├── App.jsx                 # Estado global, auth y navegacion
+        ├── config.js               # API_BASE_URL
+        └── components/             # Vistas principales
 ```
 
-### Paso 2: Levantar la Base de Datos (Terminal 1)
+## Instalacion
 
-El proyecto usa Docker para MySQL. Desde la carpeta raíz del proyecto:
+### 1. Levantar MySQL
+
+Con Docker:
 
 ```bash
-# 1. Levantar el contenedor de MySQL
 docker compose up -d
+```
 
-# 2. Esperar ~10 segundos a que MySQL inicie, luego inyectar el esquema y datos semilla
+El contenedor se llama `irrigo_mysql` y expone MySQL en el puerto `3306`.
+
+Si la base ya existia de una version anterior, puedes cargar el esquema manualmente:
+
+```bash
 docker exec -i irrigo_mysql mysql -u root < IrriGo.sql
 ```
 
-> **Nota:** Si recibes un error de conexión, espera unos segundos más y vuelve a intentar. MySQL puede tardar en inicializar la primera vez.
+Nota: `IrriGo.sql` elimina y recrea la base `IrriGo`, por lo que reinicia los datos.
 
-### Paso 3: Iniciar el Backend (Terminal 2)
+### 2. Instalar dependencias del backend
 
 ```bash
-# 1. Instalar dependencias de Python
-pip install flask flask-cors mysql-connector-python werkzeug
+pip install flask flask-cors mysql-connector-python werkzeug pyjwt
+```
 
-# 2. Ejecutar el servidor (se levanta en el puerto 3000)
+### 3. Ejecutar backend
+
+```bash
 python main.py
 ```
 
-Deberías ver algo como:
-```
- * Running on http://0.0.0.0:3000
- * Restarting with stat
+El backend corre por defecto en:
+
+```text
+http://localhost:3000
 ```
 
-### Paso 4: Iniciar el Frontend (Terminal 3)
+La API usa el prefijo:
+
+```text
+http://localhost:3000/api/v1
+```
+
+### 4. Instalar y ejecutar frontend
 
 ```bash
-# 1. Entrar a la carpeta del frontend
 cd frontend
-
-# 2. Instalar dependencias de Node.js
 npm install
-
-# 3. Iniciar el servidor de desarrollo
 npm run dev
 ```
 
-Deberías ver algo como:
-```
-  VITE v7.3.1  ready in 500ms
-  ➜  Local:   http://localhost:5173/
-```
-
-### Paso 5: Abrir la aplicación
-
-Abre tu navegador en **http://localhost:5173** y listo.
-
----
-
-## 🔐 Credenciales de Acceso
-
-Las contraseñas están hasheadas con `werkzeug.security` (no texto plano). Usa estas cuentas predefinidas:
-
-| Rol | Email | Contraseña |
-|---|---|---|
-| **Administrador** | `admin@irrigo.com` | `Admin123!` |
-| **Lector** | `jazmin@example.com` | `jazmin123` |
-
-> **¿Quieres generar nuevos hashes?** Ejecuta `python hash_passwords.py` y copia los hashes al archivo `IrriGo.sql`.
-
----
-
-## ✨ Características de la Aplicación
-
-### 🔐 Sistema de Autenticación
-- **Inicio de sesión** con validación de credenciales hasheadas (werkzeug)
-- **Registro de nuevas cuentas** con validación de campos y contraseña
-- **Cierre de sesión** que limpia el estado de la aplicación
-- **Roles diferenciados**: Administrador y Lector con permisos distintos
-
-### 📊 Dashboard Principal
-- Métricas en tiempo real: humedad promedio, índice NDVI, consumo acumulado, evapotranspiración
-- **Resumen climático local** sincronizado con Open-Meteo (temperatura, viento, radiación solar)
-- Navegación rápida a áreas de riego y reportes
-
-### 🗺️ Mapa Interactivo
-- Visualización de predios y parcelas con **Leaflet**
-- Marcadores interactivos con popups de información
-- Navegación directa al detalle de cada parcela
-
-### 🌱 Áreas de Riego
-- Listado dinámico de parcelas con estado visual (óptimo, advertencia, crítico)
-- Métricas por parcela: humedad, NDVI, consumo de agua
-- Click en cualquier parcela para ver su **detalle completo**
-
-### 📋 Detalle de Parcela
-- Información general: hectáreas, tipo de cultivo, tipo de tierra
-- **Panel Suelo**: humedad, potencial hídrico, electroconductividad, NDVI
-- **Panel Riego**: estado del módulo, consumo actual y acumulado
-- **Panel Ambiente**: datos climáticos de Open-Meteo con fallback a sensor local
-- Gráficas de historial de humedad (24h) y evolución NDVI (7 días)
-- Botón "Editar Parámetros" **solo visible para administradores**
-
-### 🔔 Centro de Alertas (Sistema de 2 pasos)
-- **Filtros** por severidad (Alta, Media, Baja) y estado (Pendientes, Leídas, Confirmadas)
-- **Lector** puede marcar alertas como "Enterado" → la alerta queda como leída
-- **Admin** ve un badge "Marcada por lector" y debe **confirmar** para que la alerta desaparezca
-- Botón de "Marcar todas como leídas"
-- **Badge** con conteo de alertas pendientes en el Sidebar
-
-### 📈 Reportes y Análisis
-- Filtros por rango de fechas y área de riego
-- Métricas calculadas: humedad promedio, temperatura, agua usada, eficiencia NDVI
-- Gráfica de tendencias semanales con datos reales
-- Tabla de estadísticas agrupadas por área
-- **Exportar PDF**: Documento profesional con encabezado, resumen y tabla de datos
-- **Exportar Excel**: Archivo .xlsx con dos hojas (Mediciones + Resumen por Área)
-
-### ⚙️ Parámetros del Sistema (Solo Admin)
-- **Gestión de Predios**: Crear, editar y eliminar predios con coordenadas
-- **Gestión de Áreas de Riego**: Crear, editar y eliminar parcelas asignadas a predios
-- **Configuración de Cultivos**: Tipo de cultivo/tierra, capacidad de campo, punto de marchitez, rangos de humedad, lámina de riego
-- Modales interactivos para creación y edición
-
-### 👤 Perfil de Usuario
-- Visualización y edición de datos personales (nombre, email, teléfono)
-- **Guardado real** vía API (PUT al backend)
-- Rol dinámico (Administrador/Lector) basado en la BD
-- Panel de dispositivos conectados
-
-### 👁️ Vistas por Rol
-
-| Funcionalidad | Admin | Lector |
-|---|---|---|
-| Dashboard, Áreas, Mapa, Reportes | ✅ | ✅ |
-| Exportar PDF y Excel | ✅ | ✅ |
-| Editar parámetros de parcela | ✅ | ❌ |
-| Sección "Parámetros" en Sidebar | ✅ | ❌ |
-| Confirmar alertas (desaparecen) | ✅ | ❌ |
-| Marcar alertas como leídas | ✅ | ✅ |
-| Editar perfil propio | ✅ | ✅ |
-
----
-
-## 📁 Estructura del Proyecto
+El frontend normalmente queda en:
 
 ```text
-Reto-Team-03-entrega-final/
-│
-├── docker-compose.yml          # Contenedor Docker para MySQL 8.0
-├── IrriGo.sql                  # Esquema de BD + datos semilla (contraseñas hasheadas)
-├── main.py                     # API REST completa en Flask (Python)
-├── hash_passwords.py           # Script auxiliar para generar hashes de contraseñas
-├── Guide.yaml                  # Documentación OpenAPI/Swagger de la API
-├── Pruebas_Unitarias/          # Pruebas unitarias del backend
-│
-└── frontend/                   # Aplicación React + Vite
-    ├── package.json            # Dependencias: React, Leaflet, jsPDF, xlsx, etc.
-    ├── vite.config.js          # Configuración de Vite
-    ├── tailwind.config.js      # Configuración de TailwindCSS v4
-    ├── index.html              # Punto de entrada HTML
-    │
-    └── src/
-        ├── main.jsx            # Entry point de React
-        ├── App.jsx             # Orquestador principal: auth, routing, estado global
-        ├── config.js           # URL centralizada del API (localhost:3000)
-        ├── index.css           # Tema global: colores, animaciones, estilos Leaflet
-        ├── App.css             # Estilos adicionales
-        │
-        ├── assets/
-        │   └── logo.png        # Logo de IrriGo
-        │
-        ├── data/
-        │   └── mockData.js     # Datos mock de respaldo
-        │
-        └── components/
-            ├── Login.jsx           # Pantalla de inicio de sesión
-            ├── Registro.jsx        # Pantalla de creación de cuenta
-            ├── Sidebar.jsx         # Navegación lateral con roles y badge de alertas
-            ├── Dashboard.jsx       # Panel principal con métricas y clima
-            ├── AreasRiego.jsx      # Listado dinámico de parcelas
-            ├── DetalleParcela.jsx   # Vista detallada de una parcela (suelo/riego/ambiente)
-            ├── MapaDePredio.jsx     # Mapa interactivo con Leaflet
-            ├── Alertas.jsx         # Centro de alertas con sistema de 2 pasos
-            ├── Reportes.jsx        # Reportes con exportación PDF/Excel
-            ├── Parametros.jsx      # CRUD de predios, áreas y configuraciones (Admin)
-            ├── Perfil.jsx          # Gestión del perfil del usuario autenticado
-            └── UseClima.js         # Hook personalizado para sincronizar clima (Open-Meteo)
+http://localhost:5173
 ```
 
----
+## Configuracion
 
-## 🗄️ Modelo de Base de Datos
+El backend toma estas variables de entorno, con valores por defecto:
+
+| Variable | Valor por defecto | Uso |
+|---|---|---|
+| `DB_HOST` | `localhost` | Host de MySQL |
+| `DB_USER` | `root` | Usuario MySQL |
+| `DB_PASSWORD` | vacio | Password MySQL |
+| `DB_NAME` | `IrriGo` | Base de datos |
+| `DB_PORT` | `3306` | Puerto MySQL |
+| `JWT_SECRET_KEY` | `irrigo-dev-secret-change-in-prod` | Firma de tokens |
+| `IRRIGO_AUTO_MIGRATE_ON_START` | `true` | Migra columnas faltantes al arrancar |
+| `IRRIGO_BOOTSTRAP_ADMIN_ON_START` | `true` | Asegura password del admin semilla |
+| `IRRIGO_ADMIN_EMAIL` | `admin@irrigo.com` | Email admin semilla |
+| `IRRIGO_ADMIN_PASSWORD` | `Admin123!` | Password admin semilla |
+
+El frontend apunta al backend desde:
+
+```js
+// frontend/src/config.js
+export const API_BASE_URL = 'http://localhost:3000/api/v1';
+```
+
+## Credenciales semilla
+
+| Rol | Email | Contrasena |
+|---|---|---|
+| Administrador | `admin@irrigo.com` | `Admin123!` |
+| Lector | `jazmin@example.com` | `jazmin123` |
+
+## Flujo de uso
+
+1. El usuario inicia sesion o crea una cuenta.
+2. Si es una cuenta nueva, entra a onboarding.
+3. En onboarding puede crear un predio propio o unirse a uno existente con codigo.
+4. Si crea un predio, queda como administrador de ese predio.
+5. Si se une por codigo, queda como lector.
+6. La app carga el predio activo y filtra dashboards, areas, sensores, mapa, alertas y reportes por ese predio.
+
+## Funcionalidades principales
+
+### Autenticacion
+
+- Registro con validacion de contrasena segura.
+- Login con contrasenas hasheadas.
+- Tokens de sesion.
+- Endpoint `/auth/me` para restaurar sesion.
+
+### Predios
+
+- Cada predio tiene `CodigoAcceso` unico de 8 caracteres.
+- El administrador puede compartir ese codigo con lectores.
+- La creacion de predio y asignacion de admin se hace en una transaccion.
+- La pantalla de Parametros muestra predios administrados y predios de solo lectura.
+- En la UI se permite editar y regenerar codigo solo en predios administrados.
+- El boton de borrar predios fue retirado de la UI para evitar eliminaciones peligrosas durante pruebas y presentacion.
+
+### Areas de riego
+
+- Cada area pertenece a un predio.
+- Solo administradores pueden crear, editar o eliminar areas.
+- Las areas alimentan dashboards, reportes, alertas y mapa.
+
+### Sensores
+
+- Los sensores pueden estar asociados a areas y modulos de control.
+- Se consultan filtrados por predio activo.
+
+### Configuracion de cultivo
+
+- Define parametros agronomicos por area:
+  - Tipo de cultivo
+  - Tipo de tierra
+  - Capacidad de campo
+  - Punto de marchitez
+  - Rango minimo y maximo de humedad
+  - Lamina de riego
+
+### Mediciones historicas
+
+- Guardan informacion de suelo, ambiente, consumo de agua y desarrollo vegetativo.
+- Se usan para dashboard, detalle de parcela y reportes.
+
+### Alertas
+
+- Se generan comparando humedad contra rangos de configuracion.
+- Lectores pueden marcar alertas como leidas.
+- Administradores pueden confirmar alertas.
+
+### Reportes
+
+- Filtros por fechas y areas.
+- Exportacion a PDF con jsPDF.
+- Exportacion a Excel con xlsx.
+
+### Mapa
+
+- Usa Leaflet para mostrar predios, sensores y areas.
+- Filtra la informacion por predio activo.
+
+### Perfil
+
+- Permite consultar y editar datos personales.
+- Muestra predios administrados y predios compartidos.
+- Permite crear predios o solicitar acceso desde el perfil.
+- Incluye opcion de paletas para accesibilidad visual.
+
+## Modelo de datos resumido
 
 ```text
-Usuario ──M:N── Predio          (vía Usuario_predio con campo Admin)
-                  │
-                  ├── AreaRiego ── ConfiguracionCultivo (1:1)
-                  │       │
-                  │       ├── MedicionHistorica (datos de sensores + clima)
-                  │       ├── Sensor
-                  │       └── Alerta (con Leida + Confirmada_Admin)
-                  │
-                  └── ModuloControl ── Sensor
-                                    └── AreaRiego
+Usuario
+  └── Usuario_predio
+        └── Predio
+              └── AreaRiego
+                    ├── Sensor
+                    ├── ConfiguracionCultivo
+                    ├── MedicionHistorica
+                    └── Alerta
 
-RegistroAuditoria ── Usuario + AreaRiego
+ModuloControl
+  └── Sensor
+
+RegistroAuditoria
+  ├── Usuario
+  └── AreaRiego
 ```
 
-### Tablas principales:
-| Tabla | Descripción |
-|---|---|
-| `Usuario` | Usuarios del sistema (nombre, email, contraseña hasheada) |
-| `Predio` | Predios agrícolas con coordenadas GPS |
-| `Usuario_predio` | Relación M:N con campo `Admin` (define el rol) |
-| `AreaRiego` | Parcelas de riego dentro de un predio |
-| `ModuloControl` | Módulos IoT de control de hardware |
-| `Sensor` | Sensores físicos desplegados en campo |
-| `ConfiguracionCultivo` | Parámetros agronómicos por área (humedad, lámina, etc.) |
-| `MedicionHistorica` | Historial de telemetría (suelo + clima) |
-| `Alerta` | Notificaciones con sistema de 2 pasos (Leida + Confirmada_Admin) |
-| `RegistroAuditoria` | Bitácora de cambios |
-
----
-
-## 🔌 Endpoints de la API
-
-La API REST corre en `http://localhost:3000/api/v1`. Documentación completa en `Guide.yaml` (formato OpenAPI 3.0).
+## Endpoints principales
 
 | Recurso | Endpoints |
 |---|---|
-| Usuarios | `GET/POST /usuarios`, `GET/PUT/DELETE /usuarios/:id`, `POST /usuarios/login` |
-| Predios | `GET/POST /predios`, `GET/PUT/DELETE /predios/:id` |
-| Usuarios-Predios | `GET/POST /usuarios-predios`, `GET/PUT/DELETE /usuarios-predios/:idU/:idP` |
-| Módulos Control | `GET/POST /modulos-control`, `GET/PUT/DELETE /modulos-control/:id` |
-| Áreas de Riego | `GET/POST /areas-riego`, `GET/PUT/DELETE /areas-riego/:id` |
+| Auth | `POST /usuarios/login`, `GET /auth/me`, `POST /registro` |
+| Predios | `GET/POST /predios`, `GET/PUT/DELETE /predios/:id`, `POST /predios/:id/regenerar-codigo` |
+| Onboarding | `POST /predios/onboarding/crear`, `POST /predios/onboarding/solicitar-acceso` |
+| Usuarios-Predios | `GET/POST /usuarios-predios`, `GET/PUT/DELETE /usuarios-predios/:idUsuario/:idPredio` |
+| Areas | `GET/POST /areas-riego`, `GET/PUT/DELETE /areas-riego/:id` |
 | Sensores | `GET/POST /sensores`, `GET/PUT/DELETE /sensores/:id` |
-| Config. Cultivo | `GET/POST /configuraciones-cultivo`, `GET/PUT/DELETE /configuraciones-cultivo/:id` |
-| Mediciones | `GET/POST /mediciones-historicas`, `GET/PUT/DELETE /mediciones-historicas/:id` |
-| Alertas | `GET/POST /alertas`, `GET/PUT/DELETE /alertas/:id` |
-| Auditoría | `GET/POST /registros-auditoria`, `GET/PUT/DELETE /registros-auditoria/:id` |
+| Configuraciones | `GET/POST /configuraciones-cultivo`, `GET/PUT/DELETE /configuraciones-cultivo/:id` |
+| Mediciones | `GET/POST /mediciones-historicas`, endpoints de historial y NDVI |
+| Alertas | `GET/POST /alertas`, `PUT /alertas/:id`, `GET /alertas/verificar/:idArea` |
 | Clima | `POST /clima/sincronizar/:idArea`, `GET /clima/ultimo/:idArea` |
+
+## Pruebas y verificacion
+
+Backend:
+
+```bash
+python -m py_compile main.py
+pytest -q
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm run build
+```
+
+Nota: algunas pruebas unitarias antiguas pueden fallar con `401` porque fueron escritas antes de proteger rutas de edicion con JWT. El comportamiento actual de la API exige token en esas rutas.
+
+## Solucion de problemas
+
+### Error interno al crear predio
+
+Revisa que la base tenga las columnas nuevas:
+
+- `Predio.CodigoAcceso`
+- `Usuario_predio.Admin`
+- `Usuario_predio.Fecha_Asignacion`
+
+El backend incluye migracion automatica al arrancar (`IRRIGO_AUTO_MIGRATE_ON_START=true`), pero si la base esta muy desfasada puedes recrearla con:
+
+```bash
+docker exec -i irrigo_mysql mysql -u root < IrriGo.sql
+```
+
+### No conecta el frontend
+
+Verifica `frontend/src/config.js` y confirma que apunte a:
+
+```text
+http://localhost:3000/api/v1
+```
+
+### Login falla con usuarios viejos
+
+Las contrasenas deben estar hasheadas con Werkzeug. Si hay usuarios antiguos en texto plano, no podran iniciar sesion.
+

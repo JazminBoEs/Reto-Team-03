@@ -3,7 +3,7 @@ import re
 import string
 import secrets
 from datetime import datetime, date, timedelta
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from functools import wraps
 import random
 import threading
@@ -42,6 +42,15 @@ class CustomJSONProvider(DefaultJSONProvider):
 app = Flask(__name__)
 CORS(app)
 app.json = CustomJSONProvider(app)
+
+@app.errorhandler(mysql.connector.Error)
+def handle_mysql_error(error):
+    logging.error(f"Database error: {error}")
+    if error.errno == 1451:  # ER_ROW_IS_REFERENCED_2
+        return jsonify({"code": 409, "message": "No se puede eliminar este registro porque tiene información asociada."}), 409
+    elif error.errno == 1062: # ER_DUP_ENTRY
+        return jsonify({"code": 409, "message": "Ya existe un registro con estos datos únicos."}), 409
+    return jsonify({"code": 500, "message": "Error interno en la base de datos."}), 500
 
 # -------------------------------------------------------------------
 # JWT y Seguridad
@@ -157,6 +166,72 @@ def execute_query(query, params=None, fetch=False, fetchone=False, commit=False)
         if conn:
             conn.close()
 
+
+def execute_transaction(operations):
+    """
+    Ejecuta varias operaciones SQL en una sola transaccion.
+    operations: lista de tuplas (query, params)
+    """
+    conn = None
+    cursor = None
+    try:
+        conn = mysql.connector.connect(
+            host=os.environ.get('DB_HOST', 'localhost'),
+            user=os.environ.get('DB_USER', 'root'),
+            password=os.environ.get('DB_PASSWORD', ''),
+            database=os.environ.get('DB_NAME', 'IrriGo'),
+            port=os.environ.get('DB_PORT', '3306')
+        )
+        cursor = conn.cursor(dictionary=True)
+        for query, params in operations:
+            cursor.execute(query, params or ())
+        conn.commit()
+    except mysql.connector.Error as e:
+        if conn:
+            conn.rollback()
+        raise e
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
+def create_predio_with_admin(predio_data, user_id):
+    conn = None
+    cursor = None
+    try:
+        conn = mysql.connector.connect(
+            host=os.environ.get('DB_HOST', 'localhost'),
+            user=os.environ.get('DB_USER', 'root'),
+            password=os.environ.get('DB_PASSWORD', ''),
+            database=os.environ.get('DB_NAME', 'IrriGo'),
+            port=os.environ.get('DB_PORT', '3306')
+        )
+        cursor = conn.cursor(dictionary=True)
+
+        query, params = build_insert_query('Predio', predio_data)
+        cursor.execute(query, params)
+        predio_id = cursor.lastrowid
+
+        cursor.execute(
+            "INSERT INTO Usuario_predio (IDusuario, IDpredio, Admin) VALUES (%s, %s, True)",
+            (user_id, predio_id),
+        )
+        cursor.execute("SELECT * FROM Predio WHERE IDpredio = %s", (predio_id,))
+        predio = cursor.fetchone()
+        conn.commit()
+        return predio
+    except mysql.connector.Error as e:
+        if conn:
+            conn.rollback()
+        raise e
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
 # -------------------------------------------------------------------
 # Funciones Helper Constructores de Queries Dinámicos
 # -------------------------------------------------------------------
@@ -184,6 +259,61 @@ def build_update_query_composite(table_name, data, pks):
     params = list(data.values())
     params.extend(pks.values())
     return query, tuple(params)
+
+
+PREDIO_FIELDS = ('NombrePredio', 'Ubicacion', 'Latitud', 'Longitud')
+
+
+def normalize_coordinate(value, field_name):
+    if value is None or value == '':
+        return None
+
+    try:
+        coordinate = Decimal(str(value).strip().replace(',', '.'))
+    except (InvalidOperation, ValueError):
+        raise ValueError(f"{field_name} debe ser un numero valido")
+
+    minimum, maximum = (-90, 90) if field_name == 'Latitud' else (-180, 180)
+    if coordinate < Decimal(minimum) or coordinate > Decimal(maximum):
+        raise ValueError(f"{field_name} debe estar entre {minimum} y {maximum}")
+
+    return coordinate.quantize(Decimal('0.00000001'))
+
+
+def normalize_predio_payload(data, include_codigo=False):
+    data = data or {}
+    payload = {field: data[field] for field in PREDIO_FIELDS if field in data}
+    if include_codigo and data.get('CodigoAcceso'):
+        payload['CodigoAcceso'] = data['CodigoAcceso']
+
+    if 'NombrePredio' in payload and isinstance(payload['NombrePredio'], str):
+        payload['NombrePredio'] = payload['NombrePredio'].strip()
+
+    if 'Ubicacion' in payload and isinstance(payload['Ubicacion'], str):
+        payload['Ubicacion'] = payload['Ubicacion'].strip()
+
+    for coord in ('Latitud', 'Longitud'):
+        if coord in payload:
+            payload[coord] = normalize_coordinate(payload[coord], coord)
+
+    if 'Ubicacion' in payload and payload['Ubicacion'] is None:
+        payload['Ubicacion'] = ''
+
+    return payload
+
+
+def parse_boolean(value):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int):
+        return value != 0
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in ('true', '1', 'yes', 'si'):
+            return True
+        if normalized in ('false', '0', 'no'):
+            return False
+    raise ValueError("El valor booleano no es valido")
 
 def get_paginated_and_filtered(table_name, filter_map=None):
     query = f"SELECT * FROM {table_name} WHERE 1=1"
@@ -264,6 +394,10 @@ def get_user_predio_relation(user_id, id_predio):
 
 def can_access_predio(user_id, id_predio):
     return get_user_predio_relation(user_id, id_predio) is not None
+
+def is_admin_predio(user_id, id_predio):
+    rel = get_user_predio_relation(user_id, id_predio)
+    return rel is not None and bool(rel.get('Admin'))
 
 
 def get_area_with_predio(id_area):
@@ -417,39 +551,22 @@ def registro_usuario():
 @app.route('/api/v1/predios/onboarding/crear', methods=['POST'])
 @jwt_required
 def crear_predio_onboarding():
-    data = request.json or {}
+    try:
+        data = normalize_predio_payload(request.json)
+    except ValueError as e:
+        return jsonify({"code": 400, "message": str(e)}), 400
+
     if not data.get('NombrePredio'):
         return jsonify({"code": 400, "message": "NombrePredio es requerido"}), 400
 
     user_id = get_authenticated_user_id()
-    codigo = generar_codigo_acceso()
-    predio_data = {
-        'CodigoAcceso': codigo,
-        'NombrePredio': data['NombrePredio'],
-        'Ubicacion': data.get('Ubicacion', ''),
-        'Latitud': data.get('Latitud') or None,
-        'Longitud': data.get('Longitud') or None
-    }
-    q, p = build_insert_query('Predio', predio_data)
-    predio_id = execute_query(q, p, commit=True)
+    data['CodigoAcceso'] = generar_codigo_acceso()
+    predio = create_predio_with_admin(data, user_id)
 
-    q2, p2 = build_insert_query('Usuario_predio', {
-        'IDusuario': user_id,
-        'IDpredio': predio_id,
-        'Admin': True,
-    })
-    execute_query(q2, p2, commit=True)
-
-    predio = execute_query(
-        "SELECT * FROM Predio WHERE IDpredio = %s",
-        (predio_id,),
-        fetch=True,
-        fetchone=True
-    )
     return jsonify({
         "message": "Predio creado exitosamente",
         "predio": predio,
-        "codigoAcceso": codigo
+        "codigoAcceso": data['CodigoAcceso']
     }), 201
 
 
@@ -472,20 +589,22 @@ def solicitar_acceso_predio_onboarding():
         return jsonify({"code": 404, "message": "Código de acceso no válido"}), 404
 
     existente = execute_query(
-        "SELECT 1 FROM Usuario_predio WHERE IDusuario = %s AND IDpredio = %s",
+        "SELECT Admin FROM Usuario_predio WHERE IDusuario = %s AND IDpredio = %s",
         (user_id, predio['IDpredio']),
         fetch=True,
         fetchone=True,
     )
     if existente:
-        return jsonify({"code": 400, "message": "Ya tienes acceso a este predio"}), 400
+        if existente.get('Admin'):
+            return jsonify({"code": 400, "message": "Ya eres administrador de este predio"}), 400
+        else:
+            return jsonify({"code": 400, "message": "Ya tienes acceso a este predio como lector"}), 400
 
-    q, p = build_insert_query('Usuario_predio', {
-        'IDusuario': user_id,
-        'IDpredio': predio['IDpredio'],
-        'Admin': False,
-    })
-    execute_query(q, p, commit=True)
+    execute_query(
+        "INSERT INTO Usuario_predio (IDusuario, IDpredio, Admin) VALUES (%s, %s, False) ON DUPLICATE KEY UPDATE Admin = Admin",
+        (user_id, predio['IDpredio']),
+        commit=True
+    )
 
     return jsonify({
         "message": "Acceso concedido como lector",
@@ -555,7 +674,11 @@ def get_usuario_by_id(idUsuario):
     return jsonify(user), 200
 
 @app.route('/api/v1/usuarios/<int:idUsuario>', methods=['PUT'])
+@jwt_required
 def actualizar_usuario(idUsuario):
+    user_id = get_authenticated_user_id()
+    if user_id != idUsuario:
+        return jsonify({"code": 403, "message": "Acceso denegado"}), 403
     data = request.json
     existing = execute_query("SELECT 1 FROM Usuario WHERE IDusuario = %s", (idUsuario,), fetch=True, fetchone=True)
     if not existing:
@@ -578,7 +701,11 @@ def actualizar_usuario(idUsuario):
     return jsonify(updated_user), 200
 
 @app.route('/api/v1/usuarios/<int:idUsuario>', methods=['DELETE'])
+@jwt_required
 def eliminar_usuario(idUsuario):
+    user_id = get_authenticated_user_id()
+    if user_id != idUsuario:
+        return jsonify({"code": 403, "message": "Acceso denegado"}), 403
     existing = execute_query("SELECT 1 FROM Usuario WHERE IDusuario = %s", (idUsuario,), fetch=True, fetchone=True)
     if not existing:
         return jsonify({"code": 404, "message": "No encontrado"}), 404
@@ -624,7 +751,7 @@ def get_predios():
     user_id = get_authenticated_user_id()
     records = execute_query(
         """
-        SELECT p.*
+        SELECT p.*, up.Admin
         FROM Predio p
         JOIN Usuario_predio up ON up.IDpredio = p.IDpredio
         WHERE up.IDusuario = %s
@@ -633,16 +760,24 @@ def get_predios():
         (user_id,),
         fetch=True,
     ) or []
+    for record in records:
+        record['Admin'] = bool(record.get('Admin'))
     return jsonify(records), 200
 
 @app.route('/api/v1/predios', methods=['POST'])
+@jwt_required
 def crear_predio():
-    data = request.json
-    if 'CodigoAcceso' not in data:
-        data['CodigoAcceso'] = generar_codigo_acceso()
-    query, params = build_insert_query('Predio', data)
-    last_id = execute_query(query, params, commit=True)
-    new_record = execute_query("SELECT * FROM Predio WHERE IDpredio = %s", (last_id,), fetch=True, fetchone=True)
+    user_id = get_authenticated_user_id()
+    try:
+        data = normalize_predio_payload(request.json)
+    except ValueError as e:
+        return jsonify({"code": 400, "message": str(e)}), 400
+
+    if not data.get('NombrePredio'):
+        return jsonify({"code": 400, "message": "NombrePredio es requerido"}), 400
+    data['CodigoAcceso'] = generar_codigo_acceso()
+
+    new_record = create_predio_with_admin(data, user_id)
     return jsonify(new_record), 201
 
 @app.route('/api/v1/predios/<int:idPredio>', methods=['GET'])
@@ -657,13 +792,19 @@ def get_predio_by_id(idPredio):
     return jsonify(record), 200
 
 @app.route('/api/v1/predios/<int:idPredio>', methods=['PUT'])
+@jwt_required
 def actualizar_predio(idPredio):
-    data = request.json
+    user_id = get_authenticated_user_id()
+    if not is_admin_predio(user_id, idPredio):
+        return jsonify({"code": 403, "message": "Solo un administrador puede actualizar este predio"}), 403
+    try:
+        data = normalize_predio_payload(request.json)
+    except ValueError as e:
+        return jsonify({"code": 400, "message": str(e)}), 400
+
     existing = execute_query("SELECT 1 FROM Predio WHERE IDpredio = %s", (idPredio,), fetch=True, fetchone=True)
     if not existing:
         return jsonify({"code": 404, "message": "No encontrado"}), 404
-    # Nunca permitir modificar CodigoAcceso directamente por esta ruta
-    data.pop('CodigoAcceso', None)
     query, params = build_update_query('Predio', data, 'IDpredio', idPredio)
     if query:
         execute_query(query, params, commit=True)
@@ -671,11 +812,56 @@ def actualizar_predio(idPredio):
     return jsonify(updated_record), 200
 
 @app.route('/api/v1/predios/<int:idPredio>', methods=['DELETE'])
+@jwt_required
 def eliminar_predio(idPredio):
+    user_id = get_authenticated_user_id()
+    if not is_admin_predio(user_id, idPredio):
+        return jsonify({"code": 403, "message": "Solo un administrador puede eliminar este predio"}), 403
     existing = execute_query("SELECT 1 FROM Predio WHERE IDpredio = %s", (idPredio,), fetch=True, fetchone=True)
     if not existing:
         return jsonify({"code": 404, "message": "No encontrado"}), 404
-    execute_query("DELETE FROM Predio WHERE IDpredio = %s", (idPredio,), commit=True)
+
+    execute_transaction([
+        (
+            """
+            DELETE al
+            FROM Alerta al
+            JOIN AreaRiego ar ON ar.ID_Area = al.ID_area
+            WHERE ar.IDpredio = %s
+            """,
+            (idPredio,),
+        ),
+        (
+            """
+            DELETE mh
+            FROM MedicionHistorica mh
+            JOIN AreaRiego ar ON ar.ID_Area = mh.ID_Area
+            WHERE ar.IDpredio = %s
+            """,
+            (idPredio,),
+        ),
+        (
+            """
+            DELETE cc
+            FROM ConfiguracionCultivo cc
+            JOIN AreaRiego ar ON ar.ID_Area = cc.ID_Area
+            WHERE ar.IDpredio = %s
+            """,
+            (idPredio,),
+        ),
+        (
+            """
+            UPDATE Sensor s
+            JOIN AreaRiego ar ON ar.ID_Area = s.ID_Area
+            SET s.ID_Area = NULL
+            WHERE ar.IDpredio = %s
+            """,
+            (idPredio,),
+        ),
+        ("DELETE FROM AreaRiego WHERE IDpredio = %s", (idPredio,)),
+        ("DELETE FROM Usuario_predio WHERE IDpredio = %s", (idPredio,)),
+        ("DELETE FROM Predio WHERE IDpredio = %s", (idPredio,)),
+    ])
     return '', 204
 
 # ----------------- TAG: UsuariosPredios -----------------
@@ -687,14 +873,23 @@ def get_usuarios_predios():
     return jsonify(records), 200
 
 @app.route('/api/v1/usuarios-predios', methods=['POST'])
+@jwt_required
 def crear_usuario_predio():
+    user_id = get_authenticated_user_id()
     data = request.json or {}
     if 'IDusuario' not in data or 'IDpredio' not in data:
         return jsonify({"code": 400, "message": "IDusuario e IDpredio son requeridos"}), 400
+    if not is_admin_predio(user_id, data['IDpredio']):
+        return jsonify({"code": 403, "message": "Solo un administrador puede añadir usuarios al predio"}), 403
+    try:
+        admin = parse_boolean(data.get('Admin', False))
+    except ValueError as e:
+        return jsonify({"code": 400, "message": str(e)}), 400
+
     payload = {
         'IDusuario': data['IDusuario'],
         'IDpredio': data['IDpredio'],
-        'Admin': bool(data.get('Admin', False)),
+        'Admin': admin,
     }
     query, params = build_insert_query('Usuario_predio', payload)
     execute_query(query, params, commit=True)
@@ -712,21 +907,29 @@ def get_usuario_predio_by_ids(idUsuario, idPredio):
     return jsonify(record), 200
 
 @app.route('/api/v1/usuarios-predios/<int:idUsuario>/<int:idPredio>', methods=['PUT'])
+@jwt_required
 def actualizar_usuario_predio(idUsuario, idPredio):
+    user_id = get_authenticated_user_id()
+    if not is_admin_predio(user_id, idPredio):
+        return jsonify({"code": 403, "message": "Solo un administrador puede cambiar roles"}), 403
     data = request.json or {}
     existing = execute_query("SELECT Admin FROM Usuario_predio WHERE IDusuario = %s AND IDpredio = %s", 
                              (idUsuario, idPredio), fetch=True, fetchone=True)
     if not existing:
         return jsonify({"code": 404, "message": "No encontrado"}), 404
 
-    nuevo_admin = data.get('Admin')
-    intenta_degradar = 'Admin' in data and nuevo_admin in (False, 0, '0', 'false', 'False')
+    try:
+        nuevo_admin = parse_boolean(data['Admin']) if 'Admin' in data else None
+    except ValueError as e:
+        return jsonify({"code": 400, "message": str(e)}), 400
+
+    intenta_degradar = 'Admin' in data and not nuevo_admin
     if bool(existing['Admin']) and intenta_degradar:
         return jsonify({"code": 403, "message": "Un administrador del predio no puede convertirse en lector"}), 403
 
     payload = {}
     if 'Admin' in data:
-        payload['Admin'] = bool(data['Admin'])
+        payload['Admin'] = nuevo_admin
 
     query, params = build_update_query_composite('Usuario_predio', payload, {'IDusuario': idUsuario, 'IDpredio': idPredio})
     if query:
@@ -737,7 +940,11 @@ def actualizar_usuario_predio(idUsuario, idPredio):
     return jsonify(updated_record), 200
 
 @app.route('/api/v1/usuarios-predios/<int:idUsuario>/<int:idPredio>', methods=['DELETE'])
+@jwt_required
 def eliminar_usuario_predio(idUsuario, idPredio):
+    user_id = get_authenticated_user_id()
+    if not is_admin_predio(user_id, idPredio) and user_id != idUsuario:
+        return jsonify({"code": 403, "message": "Solo un administrador puede remover usuarios"}), 403
     existing = execute_query("SELECT 1 FROM Usuario_predio WHERE IDusuario = %s AND IDpredio = %s", 
                              (idUsuario, idPredio), fetch=True, fetchone=True)
     if not existing:
@@ -814,8 +1021,13 @@ def get_areas_riego():
     return jsonify(records), 200
 
 @app.route('/api/v1/areas-riego', methods=['POST'])
+@jwt_required
 def crear_area_riego():
+    user_id = get_authenticated_user_id()
     data = request.json
+    id_predio = data.get('IDpredio')
+    if not id_predio or not is_admin_predio(user_id, id_predio):
+        return jsonify({"code": 403, "message": "Solo un administrador puede crear áreas de riego"}), 403
     query, params = build_insert_query('AreaRiego', data)
     last_id = execute_query(query, params, commit=True)
     
@@ -834,11 +1046,15 @@ def get_area_riego_by_id(idArea):
     return jsonify(record), 200
 
 @app.route('/api/v1/areas-riego/<int:idArea>', methods=['PUT'])
+@jwt_required
 def actualizar_area_riego(idArea):
+    user_id = get_authenticated_user_id()
     data = request.json
-    existing = execute_query("SELECT 1 FROM AreaRiego WHERE ID_Area = %s", (idArea,), fetch=True, fetchone=True)
+    existing = execute_query("SELECT IDpredio FROM AreaRiego WHERE ID_Area = %s", (idArea,), fetch=True, fetchone=True)
     if not existing:
         return jsonify({"code": 404, "message": "No encontrado"}), 404
+    if not is_admin_predio(user_id, existing['IDpredio']):
+        return jsonify({"code": 403, "message": "Solo un administrador puede actualizar áreas de riego"}), 403
 
     query, params = build_update_query('AreaRiego', data, 'ID_Area', idArea)
     if query:
@@ -848,10 +1064,14 @@ def actualizar_area_riego(idArea):
     return jsonify(updated_record), 200
 
 @app.route('/api/v1/areas-riego/<int:idArea>', methods=['DELETE'])
+@jwt_required
 def eliminar_area_riego(idArea):
-    existing = execute_query("SELECT 1 FROM AreaRiego WHERE ID_Area = %s", (idArea,), fetch=True, fetchone=True)
+    user_id = get_authenticated_user_id()
+    existing = execute_query("SELECT IDpredio FROM AreaRiego WHERE ID_Area = %s", (idArea,), fetch=True, fetchone=True)
     if not existing:
         return jsonify({"code": 404, "message": "No encontrado"}), 404
+    if not is_admin_predio(user_id, existing['IDpredio']):
+        return jsonify({"code": 403, "message": "Solo un administrador puede eliminar áreas de riego"}), 403
         
     execute_query("DELETE FROM AreaRiego WHERE ID_Area = %s", (idArea,), commit=True)
     return '', 204
@@ -882,8 +1102,16 @@ def get_sensores():
     return jsonify(records), 200
 
 @app.route('/api/v1/sensores', methods=['POST'])
+@jwt_required
 def crear_sensor():
+    user_id = get_authenticated_user_id()
     data = request.json
+    id_area = data.get('ID_Area')
+    if not id_area:
+        return jsonify({"code": 400, "message": "ID_Area es requerido"}), 400
+    area = execute_query("SELECT IDpredio FROM AreaRiego WHERE ID_Area = %s", (id_area,), fetch=True, fetchone=True)
+    if not area or not is_admin_predio(user_id, area['IDpredio']):
+        return jsonify({"code": 403, "message": "Solo un administrador puede crear sensores"}), 403
     query, params = build_insert_query('Sensor', data)
     last_id = execute_query(query, params, commit=True)
     
@@ -898,11 +1126,15 @@ def get_sensor_by_id(idSensor):
     return jsonify(record), 200
 
 @app.route('/api/v1/sensores/<int:idSensor>', methods=['PUT'])
+@jwt_required
 def actualizar_sensor(idSensor):
+    user_id = get_authenticated_user_id()
     data = request.json
-    existing = execute_query("SELECT 1 FROM Sensor WHERE IDsensor = %s", (idSensor,), fetch=True, fetchone=True)
+    existing = execute_query("SELECT a.IDpredio FROM Sensor s JOIN AreaRiego a ON a.ID_Area = s.ID_Area WHERE s.IDsensor = %s", (idSensor,), fetch=True, fetchone=True)
     if not existing:
         return jsonify({"code": 404, "message": "No encontrado"}), 404
+    if not is_admin_predio(user_id, existing['IDpredio']):
+        return jsonify({"code": 403, "message": "Solo un administrador puede actualizar sensores"}), 403
 
     query, params = build_update_query('Sensor', data, 'IDsensor', idSensor)
     if query:
@@ -912,10 +1144,14 @@ def actualizar_sensor(idSensor):
     return jsonify(updated_record), 200
 
 @app.route('/api/v1/sensores/<int:idSensor>', methods=['DELETE'])
+@jwt_required
 def eliminar_sensor(idSensor):
-    existing = execute_query("SELECT 1 FROM Sensor WHERE IDsensor = %s", (idSensor,), fetch=True, fetchone=True)
+    user_id = get_authenticated_user_id()
+    existing = execute_query("SELECT a.IDpredio FROM Sensor s JOIN AreaRiego a ON a.ID_Area = s.ID_Area WHERE s.IDsensor = %s", (idSensor,), fetch=True, fetchone=True)
     if not existing:
         return jsonify({"code": 404, "message": "No encontrado"}), 404
+    if not is_admin_predio(user_id, existing['IDpredio']):
+        return jsonify({"code": 403, "message": "Solo un administrador puede eliminar sensores"}), 403
         
     execute_query("DELETE FROM Sensor WHERE IDsensor = %s", (idSensor,), commit=True)
     return '', 204
@@ -946,8 +1182,16 @@ def get_configuraciones_cultivo():
     return jsonify(records), 200
 
 @app.route('/api/v1/configuraciones-cultivo', methods=['POST'])
+@jwt_required
 def crear_configuracion_cultivo():
+    user_id = get_authenticated_user_id()
     data = request.json
+    id_area = data.get('ID_Area')
+    if not id_area:
+        return jsonify({"code": 400, "message": "ID_Area es requerido"}), 400
+    area = execute_query("SELECT IDpredio FROM AreaRiego WHERE ID_Area = %s", (id_area,), fetch=True, fetchone=True)
+    if not area or not is_admin_predio(user_id, area['IDpredio']):
+        return jsonify({"code": 403, "message": "Solo un administrador puede crear configuraciones"}), 403
     query, params = build_insert_query('ConfiguracionCultivo', data)
     last_id = execute_query(query, params, commit=True)
     
@@ -962,11 +1206,15 @@ def get_configuracion_cultivo_by_id(idConfiguracion):
     return jsonify(record), 200
 
 @app.route('/api/v1/configuraciones-cultivo/<int:idConfiguracion>', methods=['PUT'])
+@jwt_required
 def actualizar_configuracion_cultivo(idConfiguracion):
+    user_id = get_authenticated_user_id()
     data = request.json
-    existing = execute_query("SELECT 1 FROM ConfiguracionCultivo WHERE ID_Configuracion = %s", (idConfiguracion,), fetch=True, fetchone=True)
+    existing = execute_query("SELECT a.IDpredio FROM ConfiguracionCultivo c JOIN AreaRiego a ON a.ID_Area = c.ID_Area WHERE c.ID_Configuracion = %s", (idConfiguracion,), fetch=True, fetchone=True)
     if not existing:
         return jsonify({"code": 404, "message": "No encontrado"}), 404
+    if not is_admin_predio(user_id, existing['IDpredio']):
+        return jsonify({"code": 403, "message": "Solo un administrador puede actualizar configuraciones"}), 403
 
     query, params = build_update_query('ConfiguracionCultivo', data, 'ID_Configuracion', idConfiguracion)
     if query:
@@ -976,10 +1224,14 @@ def actualizar_configuracion_cultivo(idConfiguracion):
     return jsonify(updated_record), 200
 
 @app.route('/api/v1/configuraciones-cultivo/<int:idConfiguracion>', methods=['DELETE'])
+@jwt_required
 def eliminar_configuracion_cultivo(idConfiguracion):
-    existing = execute_query("SELECT 1 FROM ConfiguracionCultivo WHERE ID_Configuracion = %s", (idConfiguracion,), fetch=True, fetchone=True)
+    user_id = get_authenticated_user_id()
+    existing = execute_query("SELECT a.IDpredio FROM ConfiguracionCultivo c JOIN AreaRiego a ON a.ID_Area = c.ID_Area WHERE c.ID_Configuracion = %s", (idConfiguracion,), fetch=True, fetchone=True)
     if not existing:
         return jsonify({"code": 404, "message": "No encontrado"}), 404
+    if not is_admin_predio(user_id, existing['IDpredio']):
+        return jsonify({"code": 403, "message": "Solo un administrador puede eliminar configuraciones"}), 403
         
     execute_query("DELETE FROM ConfiguracionCultivo WHERE ID_Configuracion = %s", (idConfiguracion,), commit=True)
     return '', 204
@@ -1419,6 +1671,134 @@ def _env_flag(name, default=False):
     return str(value).strip().lower() in ('1', 'true', 'yes', 'on')
 
 
+def _schema_column_exists(cursor, table_name, column_name):
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = %s
+          AND COLUMN_NAME = %s
+        """,
+        (table_name, column_name),
+    )
+    return bool(cursor.fetchone()['total'])
+
+
+def _schema_unique_index_exists(cursor, table_name, column_name):
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM INFORMATION_SCHEMA.STATISTICS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = %s
+          AND COLUMN_NAME = %s
+          AND NON_UNIQUE = 0
+        """,
+        (table_name, column_name),
+    )
+    return bool(cursor.fetchone()['total'])
+
+
+def _schema_generate_codigo(existing_codes):
+    chars = string.ascii_uppercase + string.digits
+    for _ in range(100):
+        codigo = ''.join(secrets.choice(chars) for _ in range(8))
+        if codigo not in existing_codes:
+            existing_codes.add(codigo)
+            return codigo
+    raise RuntimeError("No se pudo generar CodigoAcceso para migracion")
+
+
+def ensure_runtime_schema():
+    """
+    Migra de forma aditiva esquemas locales antiguos.
+    Evita que flujos nuevos fallen si Docker conserva una base previa.
+    """
+    conn = None
+    cursor = None
+    try:
+        conn = mysql.connector.connect(
+            host=os.environ.get('DB_HOST', 'localhost'),
+            user=os.environ.get('DB_USER', 'root'),
+            password=os.environ.get('DB_PASSWORD', ''),
+            database=os.environ.get('DB_NAME', 'IrriGo'),
+            port=os.environ.get('DB_PORT', '3306')
+        )
+        cursor = conn.cursor(dictionary=True)
+
+        if not _schema_column_exists(cursor, 'Usuario', 'FechaUltimoCambioPassword'):
+            cursor.execute("ALTER TABLE Usuario ADD COLUMN FechaUltimoCambioPassword DATETIME DEFAULT NULL")
+        if not _schema_column_exists(cursor, 'Usuario', 'RequiereCambioPassword'):
+            cursor.execute("ALTER TABLE Usuario ADD COLUMN RequiereCambioPassword BOOLEAN DEFAULT FALSE")
+
+        if not _schema_column_exists(cursor, 'Predio', 'CodigoAcceso'):
+            cursor.execute("ALTER TABLE Predio ADD COLUMN CodigoAcceso VARCHAR(8) NULL AFTER IDpredio")
+
+        cursor.execute("SELECT IDpredio, CodigoAcceso FROM Predio ORDER BY IDpredio")
+        predios = cursor.fetchall() or []
+        seen_codes = set()
+        for predio in predios:
+            codigo = (predio.get('CodigoAcceso') or '').strip().upper()
+            if len(codigo) != 8 or codigo in seen_codes:
+                codigo = _schema_generate_codigo(seen_codes)
+                cursor.execute(
+                    "UPDATE Predio SET CodigoAcceso = %s WHERE IDpredio = %s",
+                    (codigo, predio['IDpredio']),
+                )
+            else:
+                seen_codes.add(codigo)
+                if codigo != predio.get('CodigoAcceso'):
+                    cursor.execute(
+                        "UPDATE Predio SET CodigoAcceso = %s WHERE IDpredio = %s",
+                        (codigo, predio['IDpredio']),
+                    )
+
+        cursor.execute("ALTER TABLE Predio MODIFY CodigoAcceso VARCHAR(8) NOT NULL")
+        if not _schema_unique_index_exists(cursor, 'Predio', 'CodigoAcceso'):
+            cursor.execute("ALTER TABLE Predio ADD UNIQUE INDEX uq_predio_codigo_acceso (CodigoAcceso)")
+
+        added_admin = False
+        if not _schema_column_exists(cursor, 'Usuario_predio', 'Admin'):
+            cursor.execute("ALTER TABLE Usuario_predio ADD COLUMN Admin BOOLEAN DEFAULT FALSE AFTER IDpredio")
+            added_admin = True
+        if not _schema_column_exists(cursor, 'Usuario_predio', 'Fecha_Asignacion'):
+            cursor.execute("ALTER TABLE Usuario_predio ADD COLUMN Fecha_Asignacion DATETIME DEFAULT CURRENT_TIMESTAMP")
+        if added_admin:
+            cursor.execute(
+                """
+                UPDATE Usuario_predio up
+                JOIN (
+                    SELECT IDpredio, MIN(IDusuario) AS admin_id
+                    FROM Usuario_predio
+                    GROUP BY IDpredio
+                ) seed ON seed.IDpredio = up.IDpredio
+                SET up.Admin = (up.IDusuario = seed.admin_id)
+                """
+            )
+
+        if not _schema_column_exists(cursor, 'AreaRiego', 'Nombre'):
+            cursor.execute("ALTER TABLE AreaRiego ADD COLUMN Nombre VARCHAR(100)")
+        if not _schema_column_exists(cursor, 'Alerta', 'Mensaje'):
+            cursor.execute("ALTER TABLE Alerta ADD COLUMN Mensaje TEXT DEFAULT NULL")
+        if not _schema_column_exists(cursor, 'Alerta', 'Leida'):
+            cursor.execute("ALTER TABLE Alerta ADD COLUMN Leida BOOLEAN DEFAULT FALSE")
+        if not _schema_column_exists(cursor, 'Alerta', 'Confirmada_Admin'):
+            cursor.execute("ALTER TABLE Alerta ADD COLUMN Confirmada_Admin BOOLEAN DEFAULT FALSE")
+
+        conn.commit()
+        logging.info('Esquema de base de datos verificado.')
+    except mysql.connector.Error:
+        if conn:
+            conn.rollback()
+        raise
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
 def bootstrap_dev_admin_credentials():
     """
     En desarrollo, asegura que la cuenta admin de seed pueda iniciar sesión
@@ -1541,6 +1921,8 @@ if __name__ == '__main__':
     # Entorno de desarrollo. En producción, utilizar Gunicorn o uWSGI
     if not app.debug or os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
         logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
+        if _env_flag('IRRIGO_AUTO_MIGRATE_ON_START', default=True):
+            ensure_runtime_schema()
         if _env_flag('IRRIGO_BOOTSTRAP_ADMIN_ON_START', default=True):
             bootstrap_dev_admin_credentials()
         start_periodic_medicion_scheduler()

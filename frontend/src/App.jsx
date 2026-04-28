@@ -179,7 +179,7 @@ function App() {
     setModoRegistro(false);
   };
 
-  const recargarSesion = async () => {
+  const recargarSesion = async ({ mantenerVista = false, predioPreferido = predioActualId } = {}) => {
     const token = localStorage.getItem('irrigo_token');
     if (!token) return;
     const res = await fetch(`${API_BASE_URL}/auth/me`, { headers: authHeaders() });
@@ -188,12 +188,14 @@ function App() {
     const usuario = data.usuario;
     setUsuarioActual(usuario);
     localStorage.setItem('irrigo_usuario', JSON.stringify(usuario));
-    const primerPredio = usuario?.predios?.[0]?.predio ?? null;
-    setPredioActualId(primerPredio);
+    const predioElegido = usuario?.predios?.some(p => String(p.predio) === String(predioPreferido))
+      ? Number(predioPreferido)
+      : (usuario?.predios?.[0]?.predio ?? null);
+    setPredioActualId(predioElegido);
     setRequiereOnboarding(false);
     setRequiereCambioPassword(Boolean(data.requiereCambioPassword));
     localStorage.setItem('irrigo_requiere_onboarding', '0');
-    setVistaActual('dashboard');
+    if (!mantenerVista) setVistaActual('dashboard');
   };
 
   const cerrarSesion = () => {
@@ -335,7 +337,7 @@ function App() {
             predioActualId={predioActivo?.predio}
             onAlertasChange={() => {
               fetch(`${API_BASE_URL}/alertas?idPredio=${predioActivo?.predio}`, { headers: authHeaders() })
-                .then(r => r.json())
+                .then(r => r.ok ? r.json() : [])
                 .then(alertas => {
                   const noLeidas = alertas.filter(a => esAdmin ? !a.Confirmada_Admin : !a.Leida).length;
                   setAlertasNoLeidas(noLeidas);
@@ -376,6 +378,7 @@ function App() {
             setVistaActual={setVistaActual}
             usuarioActual={usuarioActual}
             predioActualId={predioActivo?.predio}
+            onPredioActualizado={(predioPreferido) => recargarSesion({ mantenerVista: true, predioPreferido })}
           />
         )}
 

@@ -3,7 +3,7 @@ import { API_BASE_URL } from '../config';
 import { authHeaders } from '../App';
 import { ArrowLeftIcon, PlusIcon, PencilSquareIcon, TrashIcon, MapPinIcon, Square3Stack3DIcon, BeakerIcon, CheckCircleIcon, ExclamationTriangleIcon, XMarkIcon, KeyIcon, ArrowPathIcon, ClipboardDocumentIcon } from '@heroicons/react/24/outline';
 
-const Parametros = ({ setVistaActual, usuarioActual, predioActualId }) => {
+const Parametros = ({ setVistaActual, usuarioActual, predioActualId, onPredioActualizado }) => {
   const [tab, setTab] = useState('cultivos'); // cultivos | predios | areas | sensores
   const [cargando, setCargando] = useState(true);
   const [configs, setConfigs] = useState([]);
@@ -20,11 +20,12 @@ const Parametros = ({ setVistaActual, usuarioActual, predioActualId }) => {
     }
     const cargar = async () => {
       try {
+        const parseRes = r => r.ok ? r.json() : [];
         const [rConfigs, rPredios, rAreas, rSensores] = await Promise.all([
-          fetch(`${API_BASE_URL}/configuraciones-cultivo?idPredio=${predioActualId}`, { headers: authHeaders() }).then(r => r.json()),
-          fetch(`${API_BASE_URL}/predios`, { headers: authHeaders() }).then(r => r.json()),
-          fetch(`${API_BASE_URL}/areas-riego?idPredio=${predioActualId}`, { headers: authHeaders() }).then(r => r.json()),
-          fetch(`${API_BASE_URL}/sensores?idPredio=${predioActualId}`, { headers: authHeaders() }).then(r => r.json()),
+          fetch(`${API_BASE_URL}/configuraciones-cultivo?idPredio=${predioActualId}`, { headers: authHeaders() }).then(parseRes),
+          fetch(`${API_BASE_URL}/predios`, { headers: authHeaders() }).then(parseRes),
+          fetch(`${API_BASE_URL}/areas-riego?idPredio=${predioActualId}`, { headers: authHeaders() }).then(parseRes),
+          fetch(`${API_BASE_URL}/sensores?idPredio=${predioActualId}`, { headers: authHeaders() }).then(parseRes),
         ]);
         setConfigs(rConfigs); setPredios(rPredios); setAreas(rAreas); setSensores(rSensores);
       } catch (e) { console.error(e); }
@@ -34,6 +35,8 @@ const Parametros = ({ setVistaActual, usuarioActual, predioActualId }) => {
   }, [predioActualId]);
 
   const mostrarMensaje = (tipo, texto) => { setMensaje({ tipo, texto }); setTimeout(() => setMensaje(null), 4000); };
+  const puedeAdministrarPredio = (predio) => predio?.Admin === undefined || predio.Admin === true || predio.Admin === 1;
+  const prediosAdministrables = predios.filter(puedeAdministrarPredio);
 
   // ===== Regenerar CodigoAcceso =====
   const regenerarCodigo = async (idPredio) => {
@@ -65,6 +68,7 @@ const Parametros = ({ setVistaActual, usuarioActual, predioActualId }) => {
         const updated = await res.json();
         if (esModo === 'editar') setPredios(predios.map(p => p.IDpredio === updated.IDpredio ? updated : p));
         else setPredios([...predios, updated]);
+        await onPredioActualizado?.(updated.IDpredio || predioActualId);
         setModal(null); mostrarMensaje('exito', `Predio ${esModo === 'editar' ? 'actualizado' : 'creado'}`);
       } else { const err = await res.json(); mostrarMensaje('error', err.message || 'Error'); }
     } catch { mostrarMensaje('error', 'Error de conexión'); }
@@ -74,7 +78,12 @@ const Parametros = ({ setVistaActual, usuarioActual, predioActualId }) => {
     if (!confirm('¿Eliminar este predio?')) return;
     try {
       const res = await fetch(`${API_BASE_URL}/predios/${id}`, { method: 'DELETE', headers: authHeaders() });
-      if (res.ok) { setPredios(predios.filter(p => p.IDpredio !== id)); mostrarMensaje('exito', 'Predio eliminado'); }
+      if (res.ok) {
+        const prediosRestantes = predios.filter(p => p.IDpredio !== id);
+        setPredios(prediosRestantes);
+        await onPredioActualizado?.(prediosRestantes[0]?.IDpredio || null);
+        mostrarMensaje('exito', 'Predio eliminado');
+      }
       else { const err = await res.json(); mostrarMensaje('error', err.message || 'Error al eliminar'); }
     } catch { mostrarMensaje('error', 'Error de conexión'); }
   };
@@ -179,19 +188,25 @@ const Parametros = ({ setVistaActual, usuarioActual, predioActualId }) => {
             <button onClick={() => setModal({ tipo: 'predio', modo: 'crear', data: { NombrePredio: '', Ubicacion: '', Latitud: '', Longitud: '' } })} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl cursor-pointer transition-colors"><PlusIcon className="w-5 h-5" /> Nuevo Predio</button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {predios.map(p => (
+            {predios.map(p => {
+              const puedeAdministrar = puedeAdministrarPredio(p);
+              return (
               <div key={p.IDpredio} className="bg-earth-panel border border-white/5 p-6 rounded-2xl">
                 <div className="flex justify-between items-start mb-3">
-                  <h4 className="text-lg font-bold text-white">{p.NombrePredio}</h4>
-                  <div className="flex gap-2">
-                    <button onClick={() => setModal({ tipo: 'predio', modo: 'editar', data: { ...p } })} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-creamy-blue cursor-pointer"><PencilSquareIcon className="w-4 h-4" /></button>
-                    <button onClick={() => eliminarPredio(p.IDpredio)} className="p-2 bg-white/5 hover:bg-red-500/20 rounded-lg text-red-400 cursor-pointer"><TrashIcon className="w-4 h-4" /></button>
+                  <div>
+                    <h4 className="text-lg font-bold text-white">{p.NombrePredio}</h4>
+                    {!puedeAdministrar && <p className="text-xs text-blue-300 mt-1">Solo lectura</p>}
                   </div>
+                  {puedeAdministrar && (
+                    <div className="flex gap-2">
+                      <button onClick={() => setModal({ tipo: 'predio', modo: 'editar', data: { ...p } })} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-creamy-blue cursor-pointer"><PencilSquareIcon className="w-4 h-4" /></button>
+                    </div>
+                  )}
                 </div>
                 <p className="text-sm text-gray-400 mb-1">{p.Ubicacion || 'Sin ubicación'}</p>
                 <p className="text-xs text-gray-500 font-mono mb-4">{p.Latitud || '-'}, {p.Longitud || '-'}</p>
                 {/* Código de Acceso */}
-                {p.CodigoAcceso && (
+                {puedeAdministrar && p.CodigoAcceso && (
                   <div className="bg-black/30 border border-emerald-500/20 rounded-xl p-3">
                     <p className="text-[10px] text-emerald-400 uppercase tracking-widest mb-1 flex items-center gap-1">
                       <KeyIcon className="w-3 h-3" /> Código de Acceso para Lectores
@@ -218,7 +233,8 @@ const Parametros = ({ setVistaActual, usuarioActual, predioActualId }) => {
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -227,7 +243,7 @@ const Parametros = ({ setVistaActual, usuarioActual, predioActualId }) => {
         <div>
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-bold text-white">Áreas de Riego</h3>
-            <button onClick={() => setModal({ tipo: 'area', modo: 'crear', data: { IDpredio: predios[0]?.IDpredio || '', Nombre: '', Num_Hectareas: '', Estado: 1 } })} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl cursor-pointer transition-colors"><PlusIcon className="w-5 h-5" /> Nueva Área</button>
+            <button onClick={() => setModal({ tipo: 'area', modo: 'crear', data: { IDpredio: predioActualId || prediosAdministrables[0]?.IDpredio || '', Nombre: '', Num_Hectareas: '', Estado: 1 } })} disabled={prediosAdministrables.length === 0} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"><PlusIcon className="w-5 h-5" /> Nueva Área</button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {areas.map(a => (
@@ -324,7 +340,7 @@ const Parametros = ({ setVistaActual, usuarioActual, predioActualId }) => {
       )}
 
       {/* MODAL GENÉRICO */}
-      {modal && <ModalFormulario modal={modal} setModal={setModal} predios={predios} areas={areas} onGuardarPredio={guardarPredio} onGuardarArea={guardarArea} onGuardarConfig={guardarConfig} />}
+      {modal && <ModalFormulario modal={modal} setModal={setModal} predios={prediosAdministrables} areas={areas} onGuardarPredio={guardarPredio} onGuardarArea={guardarArea} onGuardarConfig={guardarConfig} />}
     </div>
   );
 };
@@ -396,4 +412,3 @@ const Field = ({ label, name, value, onChange, type = 'text', required = false, 
 );
 
 export default Parametros;
-

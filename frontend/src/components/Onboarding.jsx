@@ -147,12 +147,20 @@ const Onboarding = ({ usuario, onComplete, onCancel = null, initialStep = 'selec
               <div className="grid grid-cols-2 gap-4">
                 <input
                   placeholder="Latitud"
+                  type="number"
+                  step="any"
+                  min="-90"
+                  max="90"
                   className="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-white outline-none focus:border-emerald-500"
                   value={nuevoPredio.Latitud}
                   onChange={e => setNuevoPredio({ ...nuevoPredio, Latitud: e.target.value })}
                 />
                 <input
                   placeholder="Longitud"
+                  type="number"
+                  step="any"
+                  min="-180"
+                  max="180"
                   className="w-full bg-black/40 border border-white/10 p-4 rounded-2xl text-white outline-none focus:border-emerald-500"
                   value={nuevoPredio.Longitud}
                   onChange={e => setNuevoPredio({ ...nuevoPredio, Longitud: e.target.value })}

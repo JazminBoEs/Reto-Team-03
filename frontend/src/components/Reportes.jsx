@@ -22,7 +22,7 @@ const Reportes = ({ setVistaActual, predioActualId }) => {
       return;
     }
     fetch(`${API_BASE_URL}/mediciones-historicas?idPredio=${predioActualId}`, { headers: authHeaders() })
-      .then(res => res.json())
+      .then(res => res.ok ? res.json() : [])
       .then(data => { setReportes(data); setReportesFiltrados(data); setCargando(false); })
       .catch(error => { console.error("Error al cargar reportes:", error); setCargando(false); });
   }, [predioActualId]);

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { API_BASE_URL } from '../config';
+import { authHeaders } from '../App';
 import {
   UserIcon,
   EnvelopeIcon,
@@ -40,9 +41,13 @@ const Perfil = ({
       setCargando(false);
       return;
     }
-    fetch(`${API_BASE_URL}/usuarios/${usuarioActual.IDusuario}`)
-      .then(res => res.json())
+    fetch(`${API_BASE_URL}/usuarios/${usuarioActual.IDusuario}`, { headers: authHeaders() })
+      .then(res => res.ok ? res.json() : null)
       .then(data => {
+        if (!data) {
+          setCargando(false);
+          return;
+        }
         setUsuario(data);
         setFormData({
           Nombre: data.Nombre || '',
@@ -69,7 +74,7 @@ const Perfil = ({
     try {
       const response = await fetch(`${API_BASE_URL}/usuarios/${usuarioActual.IDusuario}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify(formData),
       });
       if (response.ok) {

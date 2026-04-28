@@ -12,7 +12,7 @@ const Alertas = ({ setVistaActual, esAdmin, predioActualId, onAlertasChange }) =
   useEffect(() => {
     if (!predioActualId) return;
     fetch(`${API_BASE_URL}/alertas?idPredio=${predioActualId}`, { headers: authHeaders() })
-      .then(res => res.json())
+      .then(res => res.ok ? res.json() : [])
       .then(data => {
         const ordenadas = data.sort((a, b) => a.Leida - b.Leida);
         setAlertas(ordenadas);
@@ -27,7 +27,7 @@ const Alertas = ({ setVistaActual, esAdmin, predioActualId, onAlertasChange }) =
       method: 'PUT', headers: authHeaders(),
       body: JSON.stringify({ Leida: 1 })
     })
-    .then(res => res.json())
+    .then(res => res.ok ? res.json() : null)
     .then(() => {
       setAlertas(alertas.map(a => a.ID_Alerta === idAlerta ? { ...a, Leida: 1 } : a));
       onAlertasChange?.();
@@ -41,7 +41,7 @@ const Alertas = ({ setVistaActual, esAdmin, predioActualId, onAlertasChange }) =
       method: 'PUT', headers: authHeaders(),
       body: JSON.stringify({ Confirmada_Admin: 1, Leida: 1 })
     })
-    .then(res => res.json())
+    .then(res => res.ok ? res.json() : null)
     .then(() => {
       setAlertas(alertas.map(a => a.ID_Alerta === idAlerta ? { ...a, Confirmada_Admin: 1, Leida: 1 } : a));
       onAlertasChange?.();
