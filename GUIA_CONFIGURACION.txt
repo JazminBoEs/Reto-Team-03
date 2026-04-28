@@ -38,7 +38,7 @@ Este documento sirve como guía paso a paso para levantar el proyecto desde cero
    - JWT_SECRET_KEY (Ej: "mi_super_secreto_para_jwt_123") -> ¡IMPORTANTE PARA SESIONES!
 5. Inicia el servidor backend:
    python main.py
-   (El servidor debería correr en http://localhost:5000 o el puerto que indique Flask).
+   (El servidor debería correr en http://localhost:3000 o el puerto que indique Flask).
 
 -------------------------------------------------
 4. CONFIGURACIÓN DEL FRONTEND (React / Vite)
@@ -49,7 +49,7 @@ Este documento sirve como guía paso a paso para levantar el proyecto desde cero
    npm install
 3. Configuración de API URL:
    Asegúrate de que en el archivo `frontend/src/config.js` (o donde definas la URL base de tu API), apunte correctamente al backend. Por defecto debería ser:
-   export const API_BASE_URL = 'http://localhost:5000/api/v1';
+   export const API_BASE_URL = 'http://localhost:3000/api/v1';
 4. Inicia el servidor de desarrollo de React:
    npm run dev
 5. Abre el navegador en la ruta que te indique la terminal (usualmente http://localhost:5173).

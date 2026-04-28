@@ -1558,4 +1558,4 @@ if __name__ == '__main__':
             bootstrap_dev_admin_credentials()
         start_periodic_medicion_scheduler()
 
-    app.run(host='0.0.0.0', port=3000, debug=True)
+    app.run(host='0.0.0.0', port=3000, debug=_env_flag('FLASK_DEBUG', default=False))

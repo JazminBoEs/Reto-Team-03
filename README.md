@@ -24,7 +24,7 @@ Necesitarás **3 terminales** abiertas simultáneamente. Asegúrate de tener ins
 
 ```bash
 git clone <URL-del-repositorio>
-cd Reto-Team-03-main
+cd Reto-Team-03-entrega-final
 ```
 
 ### Paso 2: Levantar la Base de Datos (Terminal 1)
@@ -170,7 +170,7 @@ Las contraseñas están hasheadas con `werkzeug.security` (no texto plano). Usa 
 ## 📁 Estructura del Proyecto
 
 ```text
-Reto-Team-03-main/
+Reto-Team-03-entrega-final/
 │
 ├── docker-compose.yml          # Contenedor Docker para MySQL 8.0
 ├── IrriGo.sql                  # Esquema de BD + datos semilla (contraseñas hasheadas)

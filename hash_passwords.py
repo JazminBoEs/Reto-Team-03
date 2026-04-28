@@ -6,8 +6,8 @@ Los hashes generados se pueden copiar directamente en IrriGo.sql
 from werkzeug.security import generate_password_hash
 
 passwords = {
-    "admin@irrigo.com": "Admin.123!",
-    "jazmin@example.com": "Jazmin.123!",
+    "admin@irrigo.com": "Admin123!",
+    "jazmin@example.com": "jazmin123",
 }
 
 print("=" * 70)

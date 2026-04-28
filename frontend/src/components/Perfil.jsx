@@ -149,7 +149,51 @@ const Perfil = ({
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-        <div className="lg:col-span-2 order-1 lg:order-1 flex flex-col gap-6 md:gap-8">
+        {/* Avatar / Usuario (Left column on desktop) */}
+        <div className="order-1 lg:order-1 lg:col-span-1 flex flex-col gap-6 md:gap-8">
+          <div className="bg-earth-panel border border-white/5 p-6 md:p-8 rounded-3xl md:rounded-4xl shadow-2xl text-center">
+            <div className="w-24 h-24 bg-linear-to-br from-creamy-blue to-emerald-600 rounded-full flex items-center justify-center shadow-lg mb-5 border-4 border-[#0f2922] mx-auto">
+              <span className="text-4xl font-black text-white tracking-tighter">{formData.Nombre.charAt(0)}{formData.Apellido?.charAt(0) || ''}</span>
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-1">{usuario?.Nombre} {usuario?.Apellido}</h3>
+            <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border ${esAdmin ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20' : 'bg-creamy-blue/20 text-creamy-blue border-creamy-blue/20'}`}>
+              {esAdmin ? 'Admin en predio activo' : 'Lector en predio activo'}
+            </span>
+            {predioActual && (
+              <p className="text-xs text-gray-400 mt-3">Predio activo: <span className="text-gray-200">{predioActual.nombrePredio}</span></p>
+            )}
+          </div>
+
+          {/* Accesibilidad (Right below avatar on desktop) */}
+          <div className="order-4 lg:order-none bg-earth-panel border border-white/5 p-4 md:p-8 rounded-3xl md:rounded-4xl shadow-2xl">
+            <h3 className="text-xl font-bold text-white flex items-center gap-3 mb-2">
+              <SwatchIcon className="w-6 h-6 text-creamy-blue" /> Accesibilidad
+            </h3>
+            <p className="text-sm text-gray-400 mb-6">Selecciona una paleta de colores adaptada a tu visión</p>
+            <div className="grid grid-cols-1 gap-4">
+              {COLOR_MODES.map(mode => (
+                <button
+                  key={mode.id}
+                  onClick={() => setColorMode(mode.id)}
+                  className={`p-4 rounded-2xl border-2 text-left transition-all cursor-pointer ${
+                    colorMode === mode.id ? 'border-creamy-blue bg-creamy-blue/10 shadow-lg' : 'border-white/10 bg-black/20 hover:border-white/30'
+                  }`}
+                >
+                  <span className="text-sm font-bold text-white block mb-1">{mode.label}</span>
+                  <p className="text-xs text-gray-400 mb-3">{mode.desc}</p>
+                  <div className="flex gap-1.5">
+                    {mode.preview.map((color, i) => (
+                      <div key={i} className="w-6 h-6 rounded-full border border-white/10" style={{ backgroundColor: color }} />
+                    ))}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Right column: Info personal, Mis predios */}
+        <div className="order-2 lg:order-2 lg:col-span-2 flex flex-col gap-6 md:gap-8">
           <div className="bg-earth-panel border border-white/5 p-4 md:p-8 rounded-3xl md:rounded-4xl shadow-2xl">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6 md:mb-8 border-b border-white/5 pb-4">
               <h3 className="text-xl font-bold text-white flex items-center gap-3"><UserIcon className="w-6 h-6 text-creamy-blue" /> Informacion personal</h3>
@@ -198,47 +242,6 @@ const Perfil = ({
                     <span className="text-[10px] px-2 py-1 rounded-full border bg-blue-500/15 border-blue-500/30 text-blue-300 font-bold uppercase">Lector</span>
                   </div>
                   <p className="text-xs text-gray-400">{p.alcance === 'uno' ? 'Acceso parcial' : 'Acceso total de lectura'}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="lg:col-span-1 order-2 lg:order-2 flex flex-col gap-4 md:gap-6">
-          <div className="bg-earth-panel border border-white/5 p-8 rounded-4xl shadow-2xl text-center">
-            <div className="w-24 h-24 bg-linear-to-br from-creamy-blue to-emerald-600 rounded-full flex items-center justify-center shadow-lg mb-5 border-4 border-[#0f2922] mx-auto">
-              <span className="text-4xl font-black text-white tracking-tighter">{formData.Nombre.charAt(0)}{formData.Apellido?.charAt(0) || ''}</span>
-            </div>
-            <h3 className="text-2xl font-bold text-white mb-1">{usuario?.Nombre} {usuario?.Apellido}</h3>
-            <span className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider border ${esAdmin ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20' : 'bg-creamy-blue/20 text-creamy-blue border-creamy-blue/20'}`}>
-              {esAdmin ? 'Admin en predio activo' : 'Lector en predio activo'}
-            </span>
-            {predioActual && (
-              <p className="text-xs text-gray-400 mt-3">Predio activo: <span className="text-gray-200">{predioActual.nombrePredio}</span></p>
-            )}
-          </div>
-
-          <div className="bg-earth-panel border border-white/5 p-8 rounded-4xl shadow-2xl">
-            <h3 className="text-xl font-bold text-white flex items-center gap-3 mb-2">
-              <SwatchIcon className="w-6 h-6 text-creamy-blue" /> Accesibilidad
-            </h3>
-            <p className="text-sm text-gray-400 mb-6">Selecciona una paleta de colores adaptada a tu vision</p>
-            <div className="grid grid-cols-1 gap-4">
-              {COLOR_MODES.map(mode => (
-                <button
-                  key={mode.id}
-                  onClick={() => setColorMode(mode.id)}
-                  className={`p-4 rounded-2xl border-2 text-left transition-all cursor-pointer ${
-                    colorMode === mode.id ? 'border-creamy-blue bg-creamy-blue/10 shadow-lg' : 'border-white/10 bg-black/20 hover:border-white/30'
-                  }`}
-                >
-                  <span className="text-sm font-bold text-white block mb-1">{mode.label}</span>
-                  <p className="text-xs text-gray-400 mb-3">{mode.desc}</p>
-                  <div className="flex gap-1.5">
-                    {mode.preview.map((color, i) => (
-                      <div key={i} className="w-6 h-6 rounded-full border border-white/10" style={{ backgroundColor: color }} />
-                    ))}
-                  </div>
                 </button>
               ))}
             </div>

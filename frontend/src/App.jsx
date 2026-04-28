@@ -35,28 +35,91 @@ function App() {
   const [requiereCambioPassword, setRequiereCambioPassword] = useState(false);
   const [predioActualId, setPredioActualId] = useState(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [inicializandoSesion, setInicializandoSesion] = useState(true);
 
   // Conteo de alertas no leídas
   const [alertasNoLeidas, setAlertasNoLeidas] = useState(0);
 
-  // Política de desarrollo: siempre pedir credenciales al iniciar la app.
-  // Evita errores por tokens viejos/inválidos entre reinicios del backend.
   useEffect(() => {
-    localStorage.removeItem('irrigo_token');
-    localStorage.removeItem('irrigo_usuario');
-    localStorage.removeItem('irrigo_requiere_onboarding');
-    localStorage.removeItem('irrigo_predio_actual');
-    setEstaAutenticado(false);
-    setUsuarioActual(null);
-    setRequiereOnboarding(false);
-    setRequiereCambioPassword(false);
-    setPredioActualId(null);
-
-    // Restaurar preferencia de daltonismo
     const colorMode = localStorage.getItem('irrigo_color_mode');
     document.body.classList.remove('daltonismo-deutan', 'daltonismo-protan');
     if (colorMode === 'deutan') document.body.classList.add('daltonismo-deutan');
     else if (colorMode === 'protan') document.body.classList.add('daltonismo-protan');
+
+    let cancelado = false;
+
+    const restaurarSesion = async () => {
+      const token = localStorage.getItem('irrigo_token');
+      if (!token) {
+        if (!cancelado) setInicializandoSesion(false);
+        return;
+      }
+
+      const usuarioGuardado = localStorage.getItem('irrigo_usuario');
+      if (usuarioGuardado) {
+        try {
+          setUsuarioActual(JSON.parse(usuarioGuardado));
+        } catch {
+          localStorage.removeItem('irrigo_usuario');
+        }
+      }
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/auth/me`, { headers: authHeaders() });
+        if (!res.ok) {
+          localStorage.removeItem('irrigo_token');
+          localStorage.removeItem('irrigo_usuario');
+          localStorage.removeItem('irrigo_requiere_onboarding');
+          localStorage.removeItem('irrigo_predio_actual');
+          if (!cancelado) {
+            setEstaAutenticado(false);
+            setUsuarioActual(null);
+            setRequiereOnboarding(false);
+            setRequiereCambioPassword(false);
+            setPredioActualId(null);
+          }
+          return;
+        }
+
+        const data = await res.json();
+        const usuario = data.usuario;
+        const predioGuardado = localStorage.getItem('irrigo_predio_actual');
+        const predioElegido = usuario?.predios?.some(p => String(p.predio) === String(predioGuardado))
+          ? Number(predioGuardado)
+          : (usuario?.predios?.[0]?.predio ?? null);
+
+        if (!cancelado) {
+          setUsuarioActual(usuario);
+          setEstaAutenticado(true);
+          setRequiereOnboarding(false);
+          setRequiereCambioPassword(Boolean(data.requiereCambioPassword));
+          setPredioActualId(predioElegido);
+        }
+
+        localStorage.setItem('irrigo_usuario', JSON.stringify(usuario));
+        localStorage.setItem('irrigo_requiere_onboarding', '0');
+      } catch {
+        localStorage.removeItem('irrigo_token');
+        localStorage.removeItem('irrigo_usuario');
+        localStorage.removeItem('irrigo_requiere_onboarding');
+        localStorage.removeItem('irrigo_predio_actual');
+        if (!cancelado) {
+          setEstaAutenticado(false);
+          setUsuarioActual(null);
+          setRequiereOnboarding(false);
+          setRequiereCambioPassword(false);
+          setPredioActualId(null);
+        }
+      } finally {
+        if (!cancelado) setInicializandoSesion(false);
+      }
+    };
+
+    restaurarSesion();
+
+    return () => {
+      cancelado = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -148,6 +211,16 @@ function App() {
   };
 
   if (!estaAutenticado) {
+    if (inicializandoSesion) {
+      return (
+        <div className="min-h-screen bg-earth-dark flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="w-14 h-14 border-4 border-creamy-blue border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm text-gray-400">Restaurando sesión...</p>
+          </div>
+        </div>
+      );
+    }
     if (modoRegistro) {
       return (
         <Registro
