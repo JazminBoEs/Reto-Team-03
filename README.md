@@ -87,6 +87,7 @@ python main.py
 ```
 
 El backend corre por defecto en:
+(si no se esta corriendo en localhost usar el link de github en publico y cambiarlo en config.js)
 
 ```text
 http://localhost:3000
@@ -141,7 +142,9 @@ export const API_BASE_URL = 'http://localhost:3000/api/v1';
 | Rol | Email | Contrasena |
 |---|---|---|
 | Administrador | `admin@irrigo.com` | `Admin123!` |
-| Lector | `jazmin@example.com` | `jazmin123` |
+| Lector | `ejemplo@cinco.com` | `ejemplo123!` |
+
+(si Lector no funciona crear una cuenta de lector y agregar el codigo de acceso de AdminIrriGo)
 
 ## Flujo de uso
 
